@@ -22,8 +22,6 @@ gflags.DEFINE_string('dbpassword', '', 'DB password')
 
 
 def Reviews(db, component):
-    summaries = {}
-
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
     for l in dbcachingexecute.Execute(db, time.time() - 300,
                                       'gerrit_query_approvals_json',
@@ -58,20 +56,19 @@ def Reviews(db, component):
               if cursor.rowcount > 0:
                   # This is a new review, we assume we're the only writer
                   print 'New review from %s' % username
-                  if not username in summaries:
-                      cursor.execute('select * from summary where '
-                                     'username="%s" and day=date(%s);'
-                                     %(username, timestamp))
-                      if cursor.rowcount > 0:
-                          row = cursor.fetchone()
-                          summaries[username] = json.loads(row['data'])
-                      else:
-                          summaries[username] = {}
+                  cursor.execute('select * from summary where '
+                                 'username="%s" and day=date(%s);'
+                                 %(username, timestamp))
+                  if cursor.rowcount > 0:
+                      row = cursor.fetchone()
+                      summary = json.loads(row['data'])
+                  else:
+                      summar = {}
 
-                  summaries[username].setdefault(component, 0)
-                  summaries[username].setdefault('__total__', 0)
-                  summaries[username][component] += 1
-                  summaries[username]['__total__'] += 1
+                  summary.setdefault(component, 0)
+                  summary.setdefault('__total__', 0)
+                  summary[component] += 1
+                  summary['__total__'] += 1
 
                   cursor.execute('delete from summary where username="%s" '
                                  'and day=date(%s);'
@@ -80,7 +77,7 @@ def Reviews(db, component):
                                  '(day, username, data, epoch) '
                                  'values (date(%s), "%s", \'%s\', %d);'
                                  %(timestamp, username,
-                                   json.dumps(summaries[username]),
+                                   json.dumps(summary),
                                    int(time.time())))
 
               cursor.execute('commit;')
