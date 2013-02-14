@@ -74,10 +74,12 @@ def Reviews(db, component):
                   cursor.execute('delete from summary where username="%s" '
                                  'and day=date(%s);'
                                  %(username, timestamp))
-                  cursor.execute('insert into summary(day, username, data) '
-                                 'values (date(%s), "%s", \'%s\');'
+                  cursor.execute('insert into summary'
+                                 '(day, username, data, epoch) '
+                                 'values (date(%s), "%s", \'%s\', %d);'
                                  %(timestamp, username,
-                                   json.dumps(summaries[username])))
+                                   json.dumps(summaries[username]),
+                                   int(time.time())))
 
               cursor.execute('commit;')
 
