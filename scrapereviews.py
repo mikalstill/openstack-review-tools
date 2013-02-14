@@ -2,14 +2,12 @@
 
 # Take gerrit status feeds and turn them into an RSS feed
 
-import sys
-sys.path.append('/data/src/stillhq_public/trunk/python/')
-
 import base64
 import datetime
 import gflags
 import json
 import re
+import sys
 import time
 import MySQLdb
 
