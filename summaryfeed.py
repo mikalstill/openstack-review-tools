@@ -80,3 +80,7 @@ if __name__ == '__main__':
                       'day': row['day'].strftime('%Y-%m-%d'),
                       'payload': row['data']}
             print json.dumps(packet)
+
+            if row['epoch'] > last_time:
+                last_time = row['epoch']
+            
