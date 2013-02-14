@@ -23,47 +23,6 @@ gflags.DEFINE_string('dbname', 'openstack_gerrit', 'DB name')
 gflags.DEFINE_string('dbpassword', '', 'DB password')
 
 
-def ParseReviewList(db, component, status):
-  keys = []
-  values = {}
-  for l in dbcachingexecute.Execute(db, time.time(),
-                                    'gerrit_query',
-                                    'ssh -i ~/.ssh/id_gerrit '
-                                    'review.openstack.org gerrit query %s',
-                                    'status:%s project:%s' %(status,
-                                                             component),
-                                    cleanup=True):
-    l = l.strip().rstrip()
-
-    if len(l) == 0 and values and 'subject' in values:
-      description = []
-      for key in keys:
-        v = values[key]
-
-        if key == 'url':
-          description.append('&lt;b&gt;%s:&lt;/b&gt; '
-                             '&lt;a href="%s"&gt;%s&lt;/a&gt;'
-                             %(key, v, v))
-        else:
-          description.append('&lt;b&gt;%s:&lt;/b&gt; %s' %(key, v))
-
-      values['description'] = '&lt;br/&gt;'.join(description)
-      values['component'] = component
-      yield values
-
-      values = {}
-      keys = []
-
-    elif l.startswith('change '):
-      values['change'] = ' '.join(l.split(' ')[1:])
-
-    else:
-      elems = l.split(': ')
-      values[elems[0]] = ': '.join(elems[1:])
-      if elems[0] not in keys:
-        keys.append(elems[0])
-
-
 def Reviews(db, component):
   cursor = db.cursor(MySQLdb.cursors.DictCursor)
   for l in dbcachingexecute.Execute(db, time.time() - 300,
@@ -85,12 +44,15 @@ def Reviews(db, component):
         # Deliberately leave the timezone alone here so its consistant with
         # reports others generate.
         updated_at = datetime.datetime.fromtimestamp(review['grantedOn'])
+        username = review['by'].get('username', 'unknown')
+        timestamp = sql.FormatSqlValue('timestamp', updated_at)
         cursor.execute('insert ignore into reviews '
-                       '(changeid, username, timestamp, component) values '
-                       '("%s", "%s", %s, "%s");'
-                       %(d['id'], review['by'].get('username', 'unknown'),
-                         sql.FormatSqlValue('timestamp', updated_at),
-                         component))
+                       '(changeid, username, timestamp, day, component) '
+                       'values ("%s", "%s", %s, date(%s), "%s");'
+                       %(d['id'], username, timestamp, timestamp, component))
+        if cursor.rowcount > 0:
+          # This is a new review
+          print 'New review from %s' % username
         cursor.execute('commit;')
 
 
