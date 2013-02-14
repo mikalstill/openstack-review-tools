@@ -63,7 +63,7 @@ def Reviews(db, component):
                       row = cursor.fetchone()
                       summary = json.loads(row['data'])
                   else:
-                      summar = {}
+                      summary = {}
 
                   summary.setdefault(component, 0)
                   summary.setdefault('__total__', 0)
