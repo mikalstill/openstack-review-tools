@@ -45,6 +45,10 @@ def Reviews(db, component):
               # with reports others generate.
               updated_at = datetime.datetime.fromtimestamp(review['grantedOn'])
               username = review['by'].get('username', 'unknown')
+
+              if username in ['jenkins', 'smokestack']:
+                  continue
+
               timestamp = sql.FormatSqlValue('timestamp', updated_at)
               cursor.execute('insert ignore into reviews '
                              '(changeid, username, timestamp, day, component) '
