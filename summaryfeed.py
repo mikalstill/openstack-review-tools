@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     username = 'mikalstill'
 
-    day -= one_day * 7
+    day -= one_day * 6
     for i in range(7):
         timestamp = sql.FormatSqlValue('timestamp', day)
         cursor.execute('select * from summary where username="%s" and '
