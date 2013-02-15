@@ -59,6 +59,8 @@ if __name__ == '__main__':
         SendPacket(packet)
         day += one_day
 
+    SendPacket({'type': 'initial-user-summary-ends'})
+
     # Then dump updates as they happen
     while True:
         time.sleep(60)
