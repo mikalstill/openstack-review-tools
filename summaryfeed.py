@@ -17,6 +17,12 @@ gflags.DEFINE_string('dbname', 'openstack_gerrit', 'DB name')
 gflags.DEFINE_string('dbpassword', '', 'DB password')
 
 
+def SendPacket(packet):
+    packet['timestamp'] = int(time.time())
+    print json.dumps(packet)
+    sys.stdout.flush()
+
+
 if __name__ == '__main__':
     # Parse flags
     try:
@@ -27,8 +33,7 @@ if __name__ == '__main__':
         print
         print FLAGS
 
-    print 'DB connection: %s/%s to %s' %(FLAGS.dbuser, FLAGS.dbpassword,
-                                         FLAGS.dbname)
+    print 'Content-Type: text/plain\n'
     db = MySQLdb.connect(user = FLAGS.dbuser,
                          db = FLAGS.dbname,
                          passwd = FLAGS.dbpassword)
@@ -48,7 +53,6 @@ if __name__ == '__main__':
                        'day=date(%s);'
                        %(username, timestamp))
         packet = {'type': 'initial-user-summary',
-                  'timestamp': int(time.time()),
                   'user': username,
                   'day': day.strftime('%Y-%m-%d')}
         if cursor.rowcount > 0:
@@ -59,8 +63,7 @@ if __name__ == '__main__':
             if row['epoch'] > last_time:
                 last_time = row['epoch']
 
-        print json.dumps(packet)
-        
+        SendPacket(packet)
         day += one_day
 
     # Then dump updates as they happen
@@ -74,32 +77,23 @@ if __name__ == '__main__':
         cursor = db.cursor(MySQLdb.cursors.DictCursor)
 
         # Now check for updates
-        packet = {'type': 'keepalive',
-                  'timestamp': int(time.time())}
-        print json.dumps(packet)
-
-        packet = {'type': 'debug',
-                  'timestamp': int(time.time()),
-                  'payload': 'Querying for updates after %d' % last_time}
-        print json.dumps(packet)
+        SendPacket({'type': 'keepalive'})
+        SendPacket({'type': 'debug',
+                    'payload': 'Querying for updates after %d' % last_time})
 
         cursor.execute('select * from summary where username="%s" and '
                        'epoch > %d;'
                        %(username, last_time))
 
-        packet = {'type': 'debug',
-                  'timestamp': int(time.time()),
-                  'payload': 'Found %d updates' % cursor.rowcount}
-        print json.dumps(packet)
+        SendPacket({'type': 'debug',
+                    'payload': 'Found %d updates' % cursor.rowcount})
 
         for row in cursor:
-            packet = {'type': 'update-user-summary',
-                      'timestamp': int(time.time()),
-                      'user': username,
-                      'written-at': row['epoch'],
-                      'day': row['day'].strftime('%Y-%m-%d'),
-                      'payload': row['data']}
-            print json.dumps(packet)
+            SendPacket({'type': 'update-user-summary',
+                        'user': username,
+                        'written-at': row['epoch'],
+                        'day': row['day'].strftime('%Y-%m-%d'),
+                        'payload': row['data']})
 
             if row['epoch'] > last_time:
                 last_time = row['epoch']
