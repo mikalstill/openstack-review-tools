@@ -3,19 +3,12 @@
 # Take gerrit status feeds and turn them into an RSS feed
 
 import datetime
-import gflags
 import json
 import sys
 import time
 import MySQLdb
 
 import sql
-
-FLAGS = gflags.FLAGS
-gflags.DEFINE_string('dbuser', 'openstack', 'DB username')
-gflags.DEFINE_string('dbname', 'openstack_gerrit', 'DB name')
-gflags.DEFINE_string('dbpassword', '', 'DB password')
-
 
 def SendPacket(packet):
     packet['timestamp'] = int(time.time())
@@ -24,19 +17,14 @@ def SendPacket(packet):
 
 
 if __name__ == '__main__':
-    # Parse flags
-    try:
-        argv = FLAGS(sys.argv)
-
-    except gflags.FlagsError, e:
-        print 'Flags error: %s' % e
-        print
-        print FLAGS
+    # Read config from a file
+    with open('/srv/config/summaryfeed') as f:
+        flags = json.loads(f.read())
 
     print 'Content-Type: text/plain\n'
-    db = MySQLdb.connect(user = FLAGS.dbuser,
-                         db = FLAGS.dbname,
-                         passwd = FLAGS.dbpassword)
+    db = MySQLdb.connect(user = flags['dbuser'],
+                         db = flags['dbname'],
+                         passwd = flags['dbpassword'])
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
 
     # Fetch the last seven days of results to start off with
@@ -71,9 +59,9 @@ if __name__ == '__main__':
         time.sleep(60)
 
         # Rebuild the DB connection in case the DB went away
-        db = MySQLdb.connect(user = FLAGS.dbuser,
-                             db = FLAGS.dbname,
-                             passwd = FLAGS.dbpassword)
+        db = MySQLdb.connect(user = flags['dbuser'],
+                             db = flags['dbname'],
+                             passwd = flags['dbpassword'])
         cursor = db.cursor(MySQLdb.cursors.DictCursor)
 
         # Now check for updates
