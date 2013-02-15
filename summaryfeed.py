@@ -67,6 +67,7 @@ if __name__ == '__main__':
     while True:
         time.sleep(60)
 
+        cursor = db.cursor(MySQLdb.cursors.DictCursor)
         packet = {'type': 'keepalive',
                   'timestamp': int(time.time())}
         print json.dumps(packet)
