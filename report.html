@@ -100,6 +100,13 @@ xmlhttp.onreadystatechange = function() {
             case "initial-user-summary-ends":
               console.log("Draw graph");
               GenerateChart(initial);
+              break;
+
+            case "update-user-summary":
+              console.log("Update user entry: " + packet.user + ", " + packet.day + ", " + packet.payload.__total__);
+              var day = new Date(packet.day);
+              chart.series[0].addPoint([day.getTime(), packet.payload.__total__], true, true);
+              break;
 
             case "keepalive":
               console.log("Connection still alive");
@@ -110,7 +117,8 @@ xmlhttp.onreadystatechange = function() {
               break;
 
             default:
-              console.log("Unhandled packet type");
+              console.log("Unknown packet!");
+              console.log(packet);
               break;
           }
 
