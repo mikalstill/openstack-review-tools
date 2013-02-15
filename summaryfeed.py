@@ -67,7 +67,13 @@ if __name__ == '__main__':
     while True:
         time.sleep(60)
 
+        # Rebuild the DB connection in case the DB went away
+        db = MySQLdb.connect(user = FLAGS.dbuser,
+                             db = FLAGS.dbname,
+                             passwd = FLAGS.dbpassword)
         cursor = db.cursor(MySQLdb.cursors.DictCursor)
+
+        # Now check for updates
         packet = {'type': 'keepalive',
                   'timestamp': int(time.time())}
         print json.dumps(packet)
@@ -80,6 +86,12 @@ if __name__ == '__main__':
         cursor.execute('select * from summary where username="%s" and '
                        'epoch > %d;'
                        %(username, last_time))
+
+        packet = {'type': 'debug',
+                  'timestamp': int(time.time()),
+                  'payload': 'Found %d updates' % cursor.rowcount}
+        print json.dumps(packet)
+
         for row in cursor:
             packet = {'type': 'update-user-summary',
                       'timestamp': int(time.time()),
