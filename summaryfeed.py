@@ -50,6 +50,7 @@ if __name__ == '__main__':
         packet = {'type': 'initial-user-summary',
                   'timestamp': int(time.time()),
                   'user': username,
+                  'written-at': row['epoch'],
                   'day': day.strftime('%Y-%m-%d')}
         if cursor.rowcount > 0:
             row = cursor.fetchone()
@@ -70,6 +71,11 @@ if __name__ == '__main__':
                   'timestamp': int(time.time())}
         print json.dumps(packet)
 
+        packet = {'type': 'debug',
+                  'timestamp': int(time.time()),
+                  'payload': 'Querying for updates after %d' % last_time}
+        print json.dumps(packet)
+
         cursor.execute('select * from summary where username="%s" and '
                        'epoch > %d;'
                        %(username, last_time))
@@ -77,6 +83,7 @@ if __name__ == '__main__':
             packet = {'type': 'update-user-summary',
                       'timestamp': int(time.time()),
                       'user': username,
+                      'written-at': row['epoch'],
                       'day': row['day'].strftime('%Y-%m-%d'),
                       'payload': row['data']}
             print json.dumps(packet)
