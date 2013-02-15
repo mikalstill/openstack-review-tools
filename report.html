@@ -37,11 +37,6 @@ function GenerateChart(data) {
             title: {
                 text: 'Reviews'
             },
-            plotLines: [{
-                value: 0,
-                width: 1,
-                color: '#808080'
-            }]
         },
         tooltip: {
             formatter: function() {
@@ -56,10 +51,7 @@ function GenerateChart(data) {
         exporting: {
             enabled: false
         },
-        series: [{
-            name: 'mikalstill',
-            data: data
-        }]
+        series: data
     });
 }
 
@@ -74,7 +66,8 @@ var xmlhttp;
 var newbody = "";
 var responsepos = 0;
 
-var initial = [];
+var users = [];
+var initial = {};
 
 xmlhttp = new XMLHttpRequest();
 xmlhttp.onreadystatechange = function() {
@@ -86,20 +79,33 @@ xmlhttp.onreadystatechange = function() {
         while (newline > -1 ) {
           packetjson = newdata.substr(0, newline);
           packet = JSON.parse(packetjson);
-          console.log(packet);
 
           // Decode packet
           switch(packet.type) {
+            case "users-present":
+              for (i=0; i < packet.payload.length; i++) {
+                console.log("Create user: " + packet.payload[i])
+                initial[packet.payload[i]] = [];
+              }
+              users = packet.payload;
+              break;
+
             case "initial-user-summary":
               console.log("Initial user entry: " + packet.user + ", " + packet.day + ", " + packet.payload.__total__);
               var day = new Date(packet.day);
-              initial.push([day.getTime(), packet.payload.__total__]);
-              // chart.series[0].addPoint([day.getTime(), packet.payload.__total__], true, true);
+              initial[packet.user].push([day.getTime(), packet.payload.__total__]);
               break;
 
             case "initial-user-summary-ends":
               console.log("Draw graph");
-              GenerateChart(initial);
+
+              var series = [];
+              for (i=0; i < users.length; i++) {
+                series.push({'name': users[i],
+                             'data': initial[users[i]]})
+              }
+
+              GenerateChart(series);
               break;
 
             case "update-user-summary":

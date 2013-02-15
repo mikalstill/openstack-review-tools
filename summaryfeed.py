@@ -31,33 +31,36 @@ if __name__ == '__main__':
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
 
     # Fetch the last seven days of results to start off with
-    day = datetime.datetime.now()
-    one_day = datetime.timedelta(days=1)
     last_time = 0
+    initial_size = 14
 
-    username = 'mikalstill'
+    SendPacket({'type': 'users-present',
+                'payload': ['mikalstill', 'lifeless']})
 
-    day -= one_day * 6
-    for i in range(7):
-        timestamp = sql.FormatSqlValue('timestamp', day)
-        cursor.execute('select * from summary where username="%s" and '
-                       'day=date(%s);'
-                       %(username, timestamp))
-        packet = {'type': 'initial-user-summary',
-                  'user': username,
-                  'day': day.isoformat()}
-        if cursor.rowcount > 0:
-            row = cursor.fetchone()
-            packet['payload'] = json.loads(row['data'])
-            packet['written-at'] = row['epoch']
+    for username in ['mikalstill', 'lifeless']:
+        day = datetime.datetime.now()
+        one_day = datetime.timedelta(days=1)
+        day -= one_day * (initial_size - 1)
+        for i in range(initial_size):
+            timestamp = sql.FormatSqlValue('timestamp', day)
+            cursor.execute('select * from summary where username="%s" and '
+                           'day=date(%s);'
+                           %(username, timestamp))
+            packet = {'type': 'initial-user-summary',
+                      'user': username,
+                      'day': day.isoformat()}
+            if cursor.rowcount > 0:
+                row = cursor.fetchone()
+                packet['payload'] = json.loads(row['data'])
+                packet['written-at'] = row['epoch']
 
-            if row['epoch'] > last_time:
-                last_time = row['epoch']
-        else:
-            packet['payload'] = {'__total__': 0}
+                if row['epoch'] > last_time:
+                    last_time = row['epoch']
+            else:
+                packet['payload'] = {'__total__': 0}
 
-        SendPacket(packet)
-        day += one_day
+            SendPacket(packet)
+            day += one_day
 
     SendPacket({'type': 'initial-user-summary-ends'})
 
@@ -76,20 +79,17 @@ if __name__ == '__main__':
         SendPacket({'type': 'debug',
                     'payload': 'Querying for updates after %d' % last_time})
 
-        cursor.execute('select * from summary where username="%s" and '
-                       'epoch > %d;'
-                       %(username, last_time))
+        for username in ['mikalstill', 'lifeless']:
+            cursor.execute('select * from summary where username="%s" and '
+                           'epoch > %d;'
+                           %(username, last_time))
 
-        SendPacket({'type': 'debug',
-                    'payload': 'Found %d updates' % cursor.rowcount})
+            for row in cursor:
+                SendPacket({'type': 'update-user-summary',
+                            'user': username,
+                            'written-at': row['epoch'],
+                            'day': row['day'].isoformat(),
+                            'payload': row['data']})
 
-        for row in cursor:
-            SendPacket({'type': 'update-user-summary',
-                        'user': username,
-                        'written-at': row['epoch'],
-                        'day': row['day'].isoformat(),
-                        'payload': row['data']})
-
-            if row['epoch'] > last_time:
-                last_time = row['epoch']
-            
+                if row['epoch'] > last_time:
+                    last_time = row['epoch']
