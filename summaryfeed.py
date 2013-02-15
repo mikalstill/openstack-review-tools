@@ -45,7 +45,7 @@ if __name__ == '__main__':
                        %(username, timestamp))
         packet = {'type': 'initial-user-summary',
                   'user': username,
-                  'day': day.strftime('%Y-%m-%d')}
+                  'day': day.isoformat()}
         if cursor.rowcount > 0:
             row = cursor.fetchone()
             packet['payload'] = json.loads(row['data'])
@@ -53,6 +53,8 @@ if __name__ == '__main__':
 
             if row['epoch'] > last_time:
                 last_time = row['epoch']
+        else:
+            packet['payload'] = {'__total__': 0}
 
         SendPacket(packet)
         day += one_day
@@ -83,7 +85,7 @@ if __name__ == '__main__':
             SendPacket({'type': 'update-user-summary',
                         'user': username,
                         'written-at': row['epoch'],
-                        'day': row['day'].strftime('%Y-%m-%d'),
+                        'day': row['day'].isoformat(),
                         'payload': row['data']})
 
             if row['epoch'] > last_time:
