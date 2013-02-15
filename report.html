@@ -110,8 +110,24 @@ xmlhttp.onreadystatechange = function() {
 
             case "update-user-summary":
               console.log("Update user entry: " + packet.user + ", " + packet.day + ", " + packet.payload.__total__);
-              var day = new Date(packet.day);
-              chart.series[0].addPoint([day.getTime(), packet.payload.__total__], true, true);
+              var day = new Date(packet.day).getTime();
+              for (i = 0; i < chart.series.length; i++) {
+                if (chart.series[i].name == packet.user) {
+                  var handled = false;
+                  for (j = 0; j < chart.series[i].data.length; j++) {
+                    if (chart.series[i].data[j].x == day) {
+                      var point = chart.series[i].data[j];
+                      point.update(packet.payload.__total__, true, true);
+                      handled = true;
+                    }
+                  }
+
+                  if (!handled) {
+                    console.log("Added point to " + packet.user + " series");
+                    chart.series[i].addPoint([day, packet.payload.__total__], true, true);
+                  }
+                }
+              }
               break;
 
             case "keepalive":
