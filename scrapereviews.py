@@ -23,7 +23,7 @@ gflags.DEFINE_string('dbpassword', '', 'DB password')
 
 def Reviews(db, component):
     cursor = db.cursor(MySQLdb.cursors.DictCursor)
-    for l in dbcachingexecute.Execute(db, time.time() - 300,
+    for l in dbcachingexecute.Execute(db, time.time() - 60,
                                       'gerrit_query_approvals_json',
                                       ('ssh -i ~/.ssh/id_gerrit '
                                        'review.openstack.org gerrit query '

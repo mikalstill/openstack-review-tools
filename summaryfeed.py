@@ -33,13 +33,15 @@ if __name__ == '__main__':
 
     # Fetch the last seven days of results to start off with
     last_time = 0
-    initial_size = 14
+    initial_size = 30
 
     SendPacket({'type': 'users-present',
-                'payload': ['mikalstill', 'lifeless']})
+                'payload': ['mikalstill', 'lifeless', 'devananda']})
 
-    for username in ['mikalstill', 'lifeless']:
+    for username in ['mikalstill', 'lifeless', 'devananda']:
         day = datetime.datetime.now()
+        day = datetime.datetime(day.year, day.month, day.day)
+
         one_day = datetime.timedelta(days=1)
         day -= one_day * (initial_size - 1)
         for i in range(initial_size):
@@ -80,7 +82,7 @@ if __name__ == '__main__':
         SendPacket({'type': 'debug',
                     'payload': 'Querying for updates after %d' % last_time})
 
-        for username in ['mikalstill', 'lifeless']:
+        for username in ['mikalstill', 'lifeless', 'devananda']:
             cursor.execute('select * from summary where username="%s" and '
                            'epoch > %d;'
                            %(username, last_time))
@@ -90,7 +92,7 @@ if __name__ == '__main__':
                             'user': username,
                             'written-at': row['epoch'],
                             'day': row['day'].isoformat(),
-                            'payload': row['data']})
+                            'payload': json.loads(row['data'])})
 
                 if row['epoch'] > last_time:
                     last_time = row['epoch']

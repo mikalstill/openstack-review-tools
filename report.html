@@ -59,7 +59,7 @@ function GenerateChart(data) {
 </head>
 
 <body>
-<div id="container" style="min-width: 400px; height: 800px; margin: 0 auto"></div>
+<div id="container" style="min-width: 400px; height: 600px; margin: 0 auto"></div>
 
 <script type="text/javascript">
 var xmlhttp;
@@ -79,6 +79,7 @@ xmlhttp.onreadystatechange = function() {
         while (newline > -1 ) {
           packetjson = newdata.substr(0, newline);
           packet = JSON.parse(packetjson);
+          console.log(packet);
 
           // Decode packet
           switch(packet.type) {
