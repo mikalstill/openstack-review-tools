@@ -50,11 +50,11 @@ if __name__ == '__main__':
         packet = {'type': 'initial-user-summary',
                   'timestamp': int(time.time()),
                   'user': username,
-                  'written-at': row['epoch'],
                   'day': day.strftime('%Y-%m-%d')}
         if cursor.rowcount > 0:
             row = cursor.fetchone()
             packet['payload'] = json.loads(row['data'])
+            packet['written-at'] = row['epoch']
 
             if row['epoch'] > last_time:
                 last_time = row['epoch']
