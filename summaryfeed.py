@@ -21,7 +21,10 @@ if __name__ == '__main__':
     with open('/srv/config/summaryfeed') as f:
         flags = json.loads(f.read())
 
-    print 'Content-Type: text/plain\n'
+    print 'Content-Type: text/plain\r'
+    print '\r'
+    sys.stdout.flush()
+
     db = MySQLdb.connect(user = flags['dbuser'],
                          db = flags['dbname'],
                          passwd = flags['dbpassword'])
