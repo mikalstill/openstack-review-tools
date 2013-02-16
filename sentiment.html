@@ -8,7 +8,7 @@
 
 <script type="text/javascript">
 var chart;
-var datafeed = "summaryfeed";
+var datafeed = "sentimentfeed";
 
 $(function () {
     $(document).ready(function() {
@@ -24,7 +24,7 @@ function GenerateChart(data) {
     chart = new Highcharts.Chart({
         chart: {
             renderTo: 'container',
-            type: 'spline',
+            type: 'column',
             marginRight: 10,
         },
         title: {
@@ -36,7 +36,7 @@ function GenerateChart(data) {
         },
         yAxis: {
             title: {
-                text: 'Reviews'
+                text: 'Review Scores'
             },
         },
         tooltip: {

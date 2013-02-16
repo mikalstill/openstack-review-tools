@@ -99,7 +99,14 @@ function StateEngine() {
               initial[packet.user].push([day.getTime(), packet.payload.__total__]);
               break;
 
+            case "initial-user-review":
+              console.log("Initial user entry: " + packet.user + ", " + packet.day + ", " + packet.payload);
+              var day = new Date(packet.day);
+              initial[packet.user].push([day.getTime(), packet.payload]);
+              break;
+
             case "initial-user-summary-ends":
+            case "initial-user-reviews-ends":
               console.log("Draw graph");
 
               var series = [];
