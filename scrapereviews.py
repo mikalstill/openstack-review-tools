@@ -5,6 +5,7 @@
 import base64
 import datetime
 import gflags
+import hashlib
 import json
 import re
 import sys
@@ -36,6 +37,23 @@ def Reviews(db, component):
           d = json.loads(l)
       except:
           continue
+
+      if d.has_key('id'):
+          b64 = base64.encodestring(l)
+          checksum = hashlib.sha1(l).hexdigest()
+          insert = ('insert ignore into changes (changeid, timestamp, parsed, '
+                    'checksum) values ("%s", now(), "%s", "%s");'
+                    %(d['id'], b64, checksum))
+          cursor.execute(insert)
+          if cursor.rowcount == 0:
+              cursor.execute('select * from changes where changeid="%s";'
+                             % d['id'])
+              stored_checksum = cursor.fetchone()['checksum']
+              if checksum != stored_checksum:
+                  cursor.execute('delete from changes where changeid="%s";'
+                                 % d['id'])
+                  cursor.execute(insert)
+          cursor.execute('commit;')
 
       for ps in d.get('patchSets', {}):
           patchset = ps.get('number')
