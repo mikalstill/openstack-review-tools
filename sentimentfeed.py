@@ -41,7 +41,7 @@ if __name__ == '__main__':
         day -= one_day * (initial_size - 1)
         timestamp = sql.FormatSqlValue('timestamp', day)
 
-        cursor.execute('select * from reviews where '
+        cursor.execute('select *, date(timestamp) from reviews where '
                        'username="%s" and timestamp > %s '
                        'order by timestamp asc;'
                        %(username, timestamp))

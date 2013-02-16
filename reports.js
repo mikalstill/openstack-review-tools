@@ -41,6 +41,27 @@ function SetGroup(name) {
   HandleClick();
 }
 
+function AddPoint(user, time, value) {
+  var day = new Date(time).getTime();
+  for (i = 0; i < chart.series.length; i++) {
+    if (chart.series[i].name == user) {
+      var handled = false;
+      for (j = 0; j < chart.series[i].data.length; j++) {
+        if (chart.series[i].data[j].x == day) {
+          var point = chart.series[i].data[j];
+          point.update(value, true, true);
+          handled = true;
+        }
+      }
+
+      if (!handled) {
+        console.log("Added point to " + user + " series");
+        chart.series[i].addPoint([day, value], true, true);
+      }
+    }
+  }
+}
+
 var xmlhttp;
 var newbody = "";
 
@@ -120,24 +141,12 @@ function StateEngine() {
 
             case "update-user-summary":
               console.log("Update user entry: " + packet.user + ", " + packet.day + ", " + packet.payload.__total__);
-              var day = new Date(packet.day).getTime();
-              for (i = 0; i < chart.series.length; i++) {
-                if (chart.series[i].name == packet.user) {
-                  var handled = false;
-                  for (j = 0; j < chart.series[i].data.length; j++) {
-                    if (chart.series[i].data[j].x == day) {
-                      var point = chart.series[i].data[j];
-                      point.update(packet.payload.__total__, true, true);
-                      handled = true;
-                    }
-                  }
+              AddPoint(packet.user, packet.day, packet.payload.__total__);
+              break;
 
-                  if (!handled) {
-                    console.log("Added point to " + packet.user + " series");
-                    chart.series[i].addPoint([day, packet.payload.__total__], true, true);
-                  }
-                }
-              }
+            case "update-user-review":
+              console.log("Update user entry: " + packet.user + ", " + packet.day + ", " + packet.payload);
+              AddPoint(packet.user, packet.day, packet.payload);
               break;
 
             case "keepalive":
