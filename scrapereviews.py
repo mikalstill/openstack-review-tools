@@ -38,6 +38,8 @@ def Reviews(db, component):
           continue
 
       for ps in d.get('patchSets', {}):
+          patchset = ps.get('number')
+
           for review in ps.get('approvals', []):
               # Deliberately leave the timezone alone here so its consistant
               # with reports others generate.
@@ -48,11 +50,13 @@ def Reviews(db, component):
                   continue
 
               timestamp = sql.FormatSqlValue('timestamp', updated_at)
+              score = review.get('value', 0)
               cursor.execute('insert ignore into reviews '
-                             '(changeid, username, timestamp, day, component) '
-                             'values ("%s", "%s", %s, date(%s), "%s");'
+                             '(changeid, username, timestamp, day, component, '
+                             'patchset, score) '
+                             'values ("%s", "%s", %s, date(%s), "%s", %s, %s);'
                              %(d['id'], username, timestamp, timestamp,
-                               component))
+                               component, patchset, score))
               if cursor.rowcount > 0:
                   # This is a new review, we assume we're the only writer
                   print 'New review from %s' % username
