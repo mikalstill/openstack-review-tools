@@ -41,7 +41,7 @@ def ScrapeProject(projectname):
                                     activity.person.display_name,
                                     activity.datechanged)
 
-                if justdate > since:
+                if activity.datechanged > since:
                     # We define a triage as changing the status from New, and
                     # changing the importance from Undecided. You must do both
                     # to earn a cookie.
