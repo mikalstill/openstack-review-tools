@@ -50,13 +50,13 @@ if __name__ == '__main__':
                       'day': day.isoformat()}
             if cursor.rowcount > 0:
                 row = cursor.fetchone()
-                packet['payload'] = json.loads(row['data'])
+                packet['payload'] = json.loads(row['data'])['__total__']
                 packet['written-at'] = row['epoch']
 
                 if row['epoch'] > last_time:
                     last_time = row['epoch']
             else:
-                packet['payload'] = {'__total__': 0}
+                packet['payload'] = 0
 
             feedutils.SendPacket(packet)
             day += one_day
@@ -83,7 +83,7 @@ if __name__ == '__main__':
                                       'user': username,
                                       'written-at': row['epoch'],
                                       'day': row['day'].isoformat(),
-                                      'payload': json.loads(row['data'])})
+                                      'payload': json.loads(row['data'])['__total__']})
 
                 if row['epoch'] > last_time:
                     last_time = row['epoch']

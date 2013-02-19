@@ -163,11 +163,6 @@ function StateEngine() {
               break;
 
             case "initial-user-summary":
-              console.log("Initial user entry: " + packet.user + ", " + packet.day + ", " + packet.payload.__total__);
-              var day = new Date(packet.day);
-              initial[packet.user].push([day.getTime(), packet.payload.__total__]);
-              break;
-
             case "initial-user-review":
               console.log("Initial user entry: " + packet.user + ", " + packet.day + ", " + packet.payload);
               var day = new Date(packet.day);
@@ -188,10 +183,6 @@ function StateEngine() {
               break;
 
             case "update-user-summary":
-              console.log("Update user entry: " + packet.user + ", " + packet.day + ", " + packet.payload.__total__);
-              AddPoint(packet.user, packet.day, packet.payload.__total__);
-              break;
-
             case "update-user-review":
               console.log("Update user entry: " + packet.user + ", " + packet.day + ", " + packet.payload);
               AddPoint(packet.user, packet.day, packet.payload);
