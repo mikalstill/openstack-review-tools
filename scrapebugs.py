@@ -41,17 +41,16 @@ def ScrapeProject(projectname):
                                     activity.person.display_name,
                                     activity.datechanged))
 
-                if activity.datechanged > since:
-                    # We define a triage as changing the status from New, and
-                    # changing the importance from Undecided. You must do both
-                    # to earn a cookie.
-                    if (activity.whatchanged.endswith(' status') and
-                        (activity.oldvalue == 'New')):
-                        status_toucher = activity.person.display_name
-
-                    if (activity.whatchanged.endswith(' importance') and
-                        (activity.oldvalue == 'Undecided')):
-                        importance_toucher = activity.person.display_name
+                # We define a triage as changing the status from New, and
+                # changing the importance from Undecided. You must do both
+                # to earn a cookie.
+                if (activity.whatchanged.endswith(' status') and
+                    (activity.oldvalue == 'New')):
+                    status_toucher = activity.person.display_name
+                    
+                if (activity.whatchanged.endswith(' importance') and
+                    (activity.oldvalue == 'Undecided')):
+                    importance_toucher = activity.person.display_name
 
         if (status_toucher and importance_toucher and
             (status_toucher == importance_toucher)):
