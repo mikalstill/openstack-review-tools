@@ -7,54 +7,8 @@
 <script type="text/javascript" src="http://code.highcharts.com/modules/exporting.js"></script>
 
 <script type="text/javascript">
-var chart;
 var datafeed = "summaryfeed";
-
-$(function () {
-    $(document).ready(function() {
-        Highcharts.setOptions({
-            global: {
-                useUTC: false
-            }
-        });
-    });
-});
-
-function GenerateChart(data) {
-    chart = new Highcharts.Chart({
-        chart: {
-            renderTo: 'container',
-            type: 'spline',
-            marginRight: 10,
-        },
-        title: {
-            text: 'Code reviews'
-        },
-        xAxis: {
-            type: 'datetime',
-            tickPixelInterval: 150
-        },
-        yAxis: {
-            title: {
-                text: 'Reviews'
-            },
-        },
-        tooltip: {
-            formatter: function() {
-                    return '<b>'+ this.series.name +'</b><br/>'+
-                    Highcharts.dateFormat('%Y-%m-%d', this.x) +'<br/>'+
-                    Highcharts.numberFormat(this.y, 2);
-            }
-        },
-        legend: {
-            enabled: true
-        },
-        exporting: {
-            enabled: false
-        },
-        series: data
-    });
-}
+var graphstyle = "spline";
 </script>
 
 <script type="text/javascript" src="reports.js"></script>

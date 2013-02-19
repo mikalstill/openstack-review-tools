@@ -1,6 +1,54 @@
+var chart;
 var allusers = [];
 var responsepos = 0;
 xmlhttp = new XMLHttpRequest();
+
+$(function () {
+    $(document).ready(function() {
+        Highcharts.setOptions({
+            global: {
+                useUTC: false
+            }
+        });
+    });
+});
+
+function GenerateChart(style, data) {
+    chart = new Highcharts.Chart({
+        chart: {
+            renderTo: 'container',
+            type: style,
+            marginRight: 10,
+        },
+        title: {
+            text: 'Code reviews'
+        },
+        xAxis: {
+            type: 'datetime',
+            tickPixelInterval: 150
+        },
+        yAxis: {
+            title: {
+                text: 'Reviews'
+            },
+        },
+        tooltip: {
+            formatter: function() {
+                    return '<b>'+ this.series.name +'</b><br/>'+
+                    Highcharts.dateFormat('%Y-%m-%d', this.x) +'<br/>'+
+                    Highcharts.numberFormat(this.y, 2);
+            }
+        },
+        legend: {
+            enabled: true
+        },
+        exporting: {
+            enabled: false
+        },
+        series: data
+    });
+}
+
 
 function HandleClick() {
   var selected = ""
@@ -136,7 +184,7 @@ function StateEngine() {
                              'data': initial[users[i]]})
               }
 
-              GenerateChart(series);
+              GenerateChart(graphstyle, series);
               break;
 
             case "update-user-summary":
