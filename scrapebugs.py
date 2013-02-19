@@ -39,7 +39,7 @@ def ScrapeProject(projectname):
                                     activity.oldvalue,
                                     activity.newvalue,
                                     activity.person.display_name,
-                                    activity.datechanged)
+                                    activity.datechanged))
 
                 if activity.datechanged > since:
                     # We define a triage as changing the status from New, and
