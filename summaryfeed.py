@@ -45,7 +45,7 @@ if __name__ == '__main__':
             cursor.execute('select * from summary where username="%s" and '
                            'day=date(%s);'
                            %(username, timestamp))
-            packet = {'type': 'initial-user-summary',
+            packet = {'type': 'initial-value',
                       'user': username,
                       'day': day.isoformat()}
             if cursor.rowcount > 0:
@@ -61,7 +61,7 @@ if __name__ == '__main__':
             feedutils.SendPacket(packet)
             day += one_day
 
-    feedutils.SendPacket({'type': 'initial-user-summary-ends'})
+    feedutils.SendPacket({'type': 'initial-value-ends'})
 
     # Then dump updates as they happen
     while True:
@@ -79,7 +79,7 @@ if __name__ == '__main__':
                            %(username, last_time))
 
             for row in cursor:
-                feedutils.SendPacket({'type': 'update-user-summary',
+                feedutils.SendPacket({'type': 'update-value',
                                       'user': username,
                                       'written-at': row['epoch'],
                                       'day': row['day'].isoformat(),

@@ -46,7 +46,7 @@ if __name__ == '__main__':
                        'order by timestamp asc;'
                        %(username, timestamp))
         for row in cursor:
-            packet = {'type': 'initial-user-review',
+            packet = {'type': 'initial-value',
                       'user': username,
                       'day': row['timestamp'].isoformat(),
                       'payload': row['score']}
@@ -55,7 +55,7 @@ if __name__ == '__main__':
             if row['timestamp'] > last_timestamp:
                 last_timestamp = row['timestamp']
 
-    feedutils.SendPacket({'type': 'initial-user-reviews-ends'})
+    feedutils.SendPacket({'type': 'initial-value-ends'})
 
     # Then dump updates as they happen
     while True:
@@ -74,7 +74,7 @@ if __name__ == '__main__':
                            'order by timestamp asc;'
                            %(username, timestamp))
             for row in cursor:
-                packet = {'type': 'update-user-review',
+                packet = {'type': 'update-value',
                           'user': username,
                           'day': row['timestamp'].isoformat(),
                           'payload': row['score']}

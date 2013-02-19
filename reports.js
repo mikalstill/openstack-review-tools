@@ -162,15 +162,13 @@ function StateEngine() {
               users = packet.payload;
               break;
 
-            case "initial-user-summary":
-            case "initial-user-review":
-              console.log("Initial user entry: " + packet.user + ", " + packet.day + ", " + packet.payload);
+            case "initial-value":
+              console.log("Initial entry: " + packet.user + ", " + packet.day + ", " + packet.payload);
               var day = new Date(packet.day);
               initial[packet.user].push([day.getTime(), packet.payload]);
               break;
 
-            case "initial-user-summary-ends":
-            case "initial-user-reviews-ends":
+            case "initial-value-ends":
               console.log("Draw graph");
 
               var series = [];
@@ -182,8 +180,7 @@ function StateEngine() {
               GenerateChart(graphstyle, series);
               break;
 
-            case "update-user-summary":
-            case "update-user-review":
+            case "update-value":
               console.log("Update user entry: " + packet.user + ", " + packet.day + ", " + packet.payload);
               AddPoint(packet.user, packet.day, packet.payload);
               break;
