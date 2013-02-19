@@ -34,14 +34,12 @@ def ScrapeProject(projectname):
         sys.stderr.write('Reported by: %s\n' % b.bug.owner.display_name)
         for activity in b.bug.activity:
             if activity.whatchanged.startswith('%s: ' % projectname):
-                age = datetime.datetime.now() - activity.datechanged
-                sys.stderr.write('  %s :: %s -> %s :: %s on %s (%d days ago)\n'
+                sys.stderr.write('  %s :: %s -> %s :: %s on %s\n'
                                  % (activity.whatchanged,
                                     activity.oldvalue,
                                     activity.newvalue,
                                     activity.person.display_name,
-                                    activity.datechanged,
-                                    age.days))
+                                    activity.datechanged)
 
                 if justdate > since:
                     # We define a triage as changing the status from New, and
