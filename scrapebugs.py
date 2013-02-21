@@ -12,17 +12,19 @@ import sql
 
 from launchpadlib.launchpad import Launchpad
 
-cachedir = '/tmp/launchpadlib-cache'
-
-
+CACHEDIR = '/tmp/launchpadlib-cache'
 PERSON_RE = re.compile('.* \((.*)\)')
+WRITE = True
 
 
 def ScrapeProject(projectname):
     launchpad = Launchpad.login_with('openstack-lp-scripts', 'production',
-                                     cachedir, version='devel')
+                                     CACHEDIR, version='devel')
     proj = launchpad.projects[projectname]
-    cursor = feedutils.GetCursor()
+
+    cursor = None
+    if WRITE:
+        cursor = feedutils.GetCursor()
 
     now = datetime.datetime.now()
     since = datetime.datetime(now.year, now.month, now.day)
@@ -36,12 +38,33 @@ def ScrapeProject(projectname):
 
         sys.stderr.write('\n%s\n' % b.title)
         sys.stderr.write('Reported by: %s\n' % b.bug.owner.display_name)
-        cursor.execute('insert ignore into bugs (id, title, reporter, timestamp) '
-                       'values(%s, %s, "%s", %s);'
-                       %(b.bug.id, sql.FormatSqlValue('title', b.bug.title),
-                         b.bug.owner.name,
-                         sql.FormatSqlValue('timestamp', b.bug.date_created)))
-        cursor.execute('commit;')
+        if WRITE:
+            cursor.execute('insert ignore into bugs '
+                           '(id, title, reporter, timestamp) '
+                           'values(%s, %s, "%s", %s);'
+                           %(b.bug.id,
+                             sql.FormatSqlValue('title', b.bug.title),
+                             b.bug.owner.name,
+                             sql.FormatSqlValue('timestamp',
+                                                b.bug.date_created)))
+            cursor.execute('commit;')
+
+        for bugtask in b.bug.bug_tasks:
+            sys.stderr.write('  Targetted to %s on %s by %s\n'
+                             %(bugtask.bug_target_name, bugtask.date_created,
+                               bugtask.owner.name))
+
+            if WRITE:
+                timestamp = sql.FormatSqlValue('timestamp',
+                                               bugtask.date_created)
+                cursor.execute('insert ignore into bugevents '
+                               '(id, component, timestamp, username, '
+                               'field, pre, post) '
+                               'values(%s, "%s", %s, "%s", "targetted", NULL, '
+                               '"%s");'
+                               %(b.bug.id, bugtask.bug_target_name, timestamp,
+                                 bugtask.owner.name, bugtask.bug_target_name))
+                cursor.execute('commit;')
 
         for activity in b.bug.activity:
             if activity.whatchanged.startswith('%s: ' % projectname):
@@ -71,15 +94,17 @@ def ScrapeProject(projectname):
                 except:
                     pass
 
-                cursor.execute('insert ignore into bugevents '
-                               '(id, component, timestamp, username, '
-                               'field, pre, post) '
-                               'values(%s, "%s", %s, "%s", "%s", "%s", "%s");'
-                               %(b.bug.id, projectname, timestamp,
-                                 activity.person.name,
-                                 activity.whatchanged.split(': ')[1],
-                                 oldvalue, newvalue))
-                cursor.execute('commit;')
+                if WRITE:
+                    cursor.execute('insert ignore into bugevents '
+                                   '(id, component, timestamp, username, '
+                                   'field, pre, post) '
+                                   'values(%s, "%s", %s, "%s", "%s", "%s", '
+                                   '"%s");'
+                                   %(b.bug.id, projectname, timestamp,
+                                     activity.person.name,
+                                     activity.whatchanged.split(': ')[1],
+                                     oldvalue, newvalue))
+                    cursor.execute('commit;')
 
                 # We define a triage as changing the status from New, and
                 # changing the importance from Undecided. You must do both
@@ -104,11 +129,12 @@ def ScrapeProject(projectname):
                              % status_toucher)
             timestamp = sql.FormatSqlValue('timestamp', triage_timestamp)
 
-            cursor.execute('insert ignore into bugtriage '
-                           '(id, component, timestamp, username) '
-                           'values(%s, "%s", %s, "%s");'
-                           %(b.bug.id, projectname, timestamp,
-                             status_toucher))
+            if WRITE:
+                cursor.execute('insert ignore into bugtriage '
+                               '(id, component, timestamp, username) '
+                               'values(%s, "%s", %s, "%s");'
+                               %(b.bug.id, projectname, timestamp,
+                                 status_toucher))
 
 
 
