@@ -26,7 +26,7 @@ def ScrapeProject(projectname):
 
     now = datetime.datetime.now()
     since = datetime.datetime(now.year, now.month, now.day)
-    since -= datetime.timedelta(days=365)
+    since -= datetime.timedelta(days=2)
 
     bugs = proj.searchTasks(modified_since=since)
     for b in bugs:
