@@ -6,6 +6,8 @@
 import datetime
 import sys
 
+import feedutils
+
 from launchpadlib.launchpad import Launchpad
 
 cachedir = '/tmp/launchpadlib-cache'
