@@ -187,7 +187,7 @@ ScrapeProjectWrapped('openstack-common', days)
 ScrapeProjectWrapped('oslo-incubator', days)
 ScrapeProjectWrapped('glance', days)
 ScrapeProjectWrapped('horizon', days)
-ScrapeProjectWrapped('keystone, days')
+ScrapeProjectWrapped('keystone', days)
 ScrapeProjectWrapped('swift', days)
 ScrapeProjectWrapped('cinder', days)
 
