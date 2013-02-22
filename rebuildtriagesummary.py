@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Rebuild the review summary table.
+# Rebuild the triage summary table.
 
 import base64
 import datetime
@@ -19,13 +19,13 @@ import sql
 def RebuildSummary():
     users_cursor = feedutils.GetCursor()
     dates_cursor = feedutils.GetCursor()
-    reviews_cursor = feedutils.GetCursor()
+    triage_cursor = feedutils.GetCursor()
 
-    users_cursor.execute('select distinct(username) from reviews;')
+    users_cursor.execute('select distinct(username) from bugtriage;')
     for user_row in users_cursor:
         print user_row['username']
         dates_cursor.execute('select distinct(date(timestamp)) '
-                             'from reviews where username = "%s";'
+                             'from bugtriage where username = "%s";'
                              % user_row['username'])
         for date_row in dates_cursor:
             print '  %s' % date_row['(date(timestamp))']
@@ -33,25 +33,25 @@ def RebuildSummary():
                                            date_row['(date(timestamp))'])
             summary = {'__total__': 0}
 
-            reviews_cursor.execute('select * from reviews where '
+            triage_cursor.execute('select * from bugtriage where '
                                    'username = "%s" and date(timestamp) = %s '
                                    'order by timestamp asc;'
                                    %(user_row['username'], timestamp))
-            for review in reviews_cursor:
-                summary.setdefault(review['component'], 0)
-                summary[review['component']] += 1
+            for triage in triage_cursor:
+                summary.setdefault(triage['component'], 0)
+                summary[triage['component']] += 1
                 summary['__total__'] += 1
 
-            epoch = time.mktime(review['timestamp'].timetuple())
-            reviews_cursor.execute('delete from reviewsummary where '
+            epoch = time.mktime(triage['timestamp'].timetuple())
+            triage_cursor.execute('delete from bugtriagesummary where '
                                    'username="%s" and day=date(%s);'
                                    %(user_row['username'], timestamp))
-            reviews_cursor.execute('insert into reviewsummary'
+            triage_cursor.execute('insert into bugtriagesummary'
                                    '(day, username, data, epoch) '
                                    'values (date(%s), "%s", \'%s\', %d);'
                                    %(timestamp, user_row['username'],
                                      json.dumps(summary), epoch))
-            reviews_cursor.execute('commit;')
+            triage_cursor.execute('commit;')
 
 
 if __name__ == '__main__':
