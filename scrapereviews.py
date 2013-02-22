@@ -1,10 +1,9 @@
 #!/usr/bin/python
 
-# Take gerrit status feeds and turn them into an RSS feed
+# Scrape review information from gerrit
 
 import base64
 import datetime
-import gflags
 import hashlib
 import json
 import re
@@ -13,17 +12,12 @@ import time
 import MySQLdb
 
 import dbcachingexecute
+import feedutils
 import sql
 
 
-FLAGS = gflags.FLAGS
-gflags.DEFINE_string('dbuser', 'openstack', 'DB username')
-gflags.DEFINE_string('dbname', 'openstack_gerrit', 'DB name')
-gflags.DEFINE_string('dbpassword', '', 'DB password')
-
-
-def Reviews(db, component):
-    cursor = db.cursor(MySQLdb.cursors.DictCursor)
+def Reviews(component):
+    cursor = feedutils.GetCursor()
     for l in dbcachingexecute.Execute(db, time.time() - 60,
                                       'gerrit_query_approvals_json',
                                       ('ssh -i ~/.ssh/id_gerrit '
@@ -92,8 +86,8 @@ def Reviews(db, component):
                   summary[component] += 1
                   summary['__total__'] += 1
 
-                  cursor.execute('delete from reviewsummary where username="%s" '
-                                 'and day=date(%s);'
+                  cursor.execute('delete from reviewsummary where '
+                                 'username="%s" and day=date(%s);'
                                  %(username, timestamp))
                   cursor.execute('insert into reviewsummary'
                                  '(day, username, data, epoch) '
@@ -106,26 +100,11 @@ def Reviews(db, component):
 
 
 if __name__ == '__main__':
-    # Parse flags
-    try:
-        argv = FLAGS(sys.argv)
-
-    except gflags.FlagsError, e:
-        print 'Flags error: %s' % e
-        print
-        print FLAGS
-
-    print 'DB connection: %s/%s to %s' %(FLAGS.dbuser, FLAGS.dbpassword,
-                                         FLAGS.dbname)
-    db = MySQLdb.connect(user = FLAGS.dbuser,
-                         db = FLAGS.dbname,
-                         passwd = FLAGS.dbpassword)
-
-    Reviews(db, 'openstack/nova')
-    Reviews(db, 'openstack/openstack-common')
-    Reviews(db, 'openstack/oslo-incubator')
-    Reviews(db, 'openstack/glance')
-    Reviews(db, 'openstack/horizon')
-    Reviews(db, 'openstack/keystone')
-    Reviews(db, 'openstack/swift')
-    Reviews(db, 'openstack/cinder')
+    Reviews('openstack/nova')
+    Reviews('openstack/openstack-common')
+    Reviews('openstack/oslo-incubator')
+    Reviews('openstack/glance')
+    Reviews('openstack/horizon')
+    Reviews('openstack/keystone')
+    Reviews('openstack/swift')
+    Reviews('openstack/cinder')
