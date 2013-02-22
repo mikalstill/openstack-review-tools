@@ -42,7 +42,7 @@ if __name__ == '__main__':
         day -= one_day * (initial_size - 1)
         for i in range(initial_size):
             timestamp = sql.FormatSqlValue('timestamp', day)
-            cursor.execute('select * from summary where username="%s" and '
+            cursor.execute('select * from reviewsummary where username="%s" and '
                            'day=date(%s);'
                            %(username, timestamp))
             packet = {'type': 'initial-value',
@@ -74,7 +74,7 @@ if __name__ == '__main__':
                             %(last_time, datetime.datetime.now()))
 
         for username in showusers:
-            cursor.execute('select * from summary where username="%s" and '
+            cursor.execute('select * from reviewsummary where username="%s" and '
                            'epoch > %d;'
                            %(username, last_time))
 
