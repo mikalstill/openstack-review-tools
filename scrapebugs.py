@@ -135,7 +135,34 @@ def ScrapeProject(projectname):
                                'values(%s, "%s", %s, "%s");'
                                %(b.bug.id, projectname, timestamp,
                                  status_toucher))
+                if cursor.rowcount > 0:
+                    # This is a new review, we assume we're the only writer
+                    print 'New triage from %s' % status_toucher
+                    cursor.execute('select * from bugtriagesummary where '
+                                   'username="%s" and day=date(%s);'
+                                   %(status_toucher, timestamp))
+                    if cursor.rowcount > 0:
+                        row = cursor.fetchone()
+                        summary = json.loads(row['data'])
+                    else:
+                        summary = {}
 
+                    summary.setdefault(component, 0)
+                    summary.setdefault('__total__', 0)
+                    summary[component] += 1
+                    summary['__total__'] += 1
+
+                    cursor.execute('delete from bugtriagesummary where '
+                                   'usersummary="%s" and day=date(%s);'
+                                   %(status_toucher, timestamp))
+                    cursor.execute('insert into bugtriagesummary'
+                                   '(day, username, data, epoch) '
+                                   'values (date(%s), "%s", \'%s\', %d);'
+                                   %(timestamp, status_toucher,
+                                     json.dumps(summary),
+                                     int(time.time())))
+
+                cursor.execute('commit;')
 
 
 def ScrapeProjectWrapped(projectname):
