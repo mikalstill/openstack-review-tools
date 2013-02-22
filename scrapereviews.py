@@ -18,7 +18,7 @@ import sql
 
 def Reviews(component):
     cursor = feedutils.GetCursor()
-    for l in dbcachingexecute.Execute(db, time.time() - 60,
+    for l in dbcachingexecute.Execute(time.time() - 60,
                                       'gerrit_query_approvals_json',
                                       ('ssh -i ~/.ssh/id_gerrit '
                                        'review.openstack.org gerrit query '

@@ -6,14 +6,15 @@ import subprocess
 import time
 import MySQLdb
 
+import feedutils
 import sql
 
 
-def Execute(db, last_change, cmd_name, cmd, arg, cleanup=False):
+def Execute(last_change, cmd_name, cmd, arg, cleanup=False):
   actual_cmd = cmd % arg
   print 'Executing: %s' % actual_cmd
 
-  cursor = db.cursor(MySQLdb.cursors.DictCursor)
+  cursor = feedutils.GetCursor()
   try:
     cursor.execute('create table commands_%s (arg varchar(500), '
                    'timestamp datetime, epoch int, result longtext, '
