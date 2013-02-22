@@ -17,19 +17,11 @@ PERSON_RE = re.compile('.* \((.*)\)')
 WRITE = True
 
 
-def ScrapeProject(projectname):
+def ScrapeProject(projectname, days):
     launchpad = Launchpad.login_with('openstack-lp-scripts', 'production',
                                      CACHEDIR, version='devel')
     proj = launchpad.projects[projectname]
     cursor = feedutils.GetCursor()
-
-    # If we have no data, grab a lot!
-    cursor.execute('select count(*) from bugevents;')
-    if cursor.fetchone()['count(*)'] > 0:
-        days = 2
-    else:
-        days = 1000
-    print 'Fetching %d days of bugs' % days
 
     now = datetime.datetime.now()
     since = datetime.datetime(now.year, now.month, now.day)
@@ -171,19 +163,29 @@ def ScrapeProject(projectname):
                 cursor.execute('commit;')
 
 
-def ScrapeProjectWrapped(projectname):
+def ScrapeProjectWrapped(projectname, days):
     try:
-        ScrapeProject(projectname)
-    except:
-        pass
+        ScrapeProject(projectname, days)
+    except Exception, e:
+        print e
+        print '*******************'
 
 
-ScrapeProjectWrapped('nova')
-ScrapeProjectWrapped('openstack-common')
-ScrapeProjectWrapped('oslo-incubator')
-ScrapeProjectWrapped('glance')
-ScrapeProjectWrapped('horizon')
-ScrapeProjectWrapped('keystone')
-ScrapeProjectWrapped('swift')
-ScrapeProjectWrapped('cinder')
+# If we have no data, grab a lot!
+cursor = feedutils.GetCursor()
+cursor.execute('select count(*) from bugevents;')
+if cursor.fetchone()['count(*)'] > 0:
+    days = 2
+else:
+    days = 1000
+print 'Fetching %d days of bugs' % days
+
+ScrapeProjectWrapped('nova', days)
+ScrapeProjectWrapped('openstack-common', days)
+ScrapeProjectWrapped('oslo-incubator', days)
+ScrapeProjectWrapped('glance', days)
+ScrapeProjectWrapped('horizon', days)
+ScrapeProjectWrapped('keystone, days')
+ScrapeProjectWrapped('swift', days)
+ScrapeProjectWrapped('cinder', days)
 
