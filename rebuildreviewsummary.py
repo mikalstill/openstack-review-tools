@@ -42,7 +42,7 @@ def RebuildSummary():
                 summary[review['component']] += 1
                 summary['__total__'] += 1
 
-            epoch = time.mktime(row['timestamp'].timetuple())
+            epoch = time.mktime(review['timestamp'].timetuple())
             cursor.execute('delete from reviewsummary where '
                            'username="%s" and day=date(%s);'
                            %(username, timestamp))
