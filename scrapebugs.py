@@ -146,9 +146,9 @@ def ScrapeProject(projectname, days):
                     else:
                         summary = {}
 
-                    summary.setdefault(component, 0)
+                    summary.setdefault(projectname, 0)
                     summary.setdefault('__total__', 0)
-                    summary[component] += 1
+                    summary[projectname] += 1
                     summary['__total__'] += 1
 
                     cursor.execute('delete from bugtriagesummary where '
