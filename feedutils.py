@@ -44,7 +44,7 @@ def SendReviewers(cursor, window_size):
     start_of_window -= one_day * window_size
 
     all_reviewers = []
-    cursor.execute('select distinct(username), max(day) from summary '
+    cursor.execute('select distinct(username), max(day) from reviewsummary '
                    'where day > date(%s) group by username;'
                    % sql.FormatSqlValue('timestamp', start_of_window))
     for row in cursor:

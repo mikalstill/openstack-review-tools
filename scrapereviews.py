@@ -78,7 +78,7 @@ def Reviews(db, component):
               if cursor.rowcount > 0:
                   # This is a new review, we assume we're the only writer
                   print 'New review from %s' % username
-                  cursor.execute('select * from summary where '
+                  cursor.execute('select * from reviewsummary where '
                                  'username="%s" and day=date(%s);'
                                  %(username, timestamp))
                   if cursor.rowcount > 0:
@@ -92,10 +92,10 @@ def Reviews(db, component):
                   summary[component] += 1
                   summary['__total__'] += 1
 
-                  cursor.execute('delete from summary where username="%s" '
+                  cursor.execute('delete from reviewsummary where username="%s" '
                                  'and day=date(%s);'
                                  %(username, timestamp))
-                  cursor.execute('insert into summary'
+                  cursor.execute('insert into reviewsummary'
                                  '(day, username, data, epoch) '
                                  'values (date(%s), "%s", \'%s\', %d);'
                                  %(timestamp, username,
