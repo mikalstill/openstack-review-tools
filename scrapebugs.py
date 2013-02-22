@@ -21,14 +21,19 @@ def ScrapeProject(projectname):
     launchpad = Launchpad.login_with('openstack-lp-scripts', 'production',
                                      CACHEDIR, version='devel')
     proj = launchpad.projects[projectname]
+    cursor = feedutils.GetCursor()
 
-    cursor = None
-    if WRITE:
-        cursor = feedutils.GetCursor()
+    # If we have no data, grab a lot!
+    cursor.execute('select count(*) from bugevents;')
+    if cursor.fetchone()['count(*)'] > 0:
+        days = 2
+    else:
+        days = 1000
+    print 'Fetching %d days of bugs' % days
 
     now = datetime.datetime.now()
     since = datetime.datetime(now.year, now.month, now.day)
-    since -= datetime.timedelta(days=2)
+    since -= datetime.timedelta(days=days)
 
     bugs = proj.searchTasks(modified_since=since)
     for b in bugs:
@@ -110,7 +115,8 @@ def ScrapeProject(projectname):
                 # changing the importance from Undecided. You must do both
                 # to earn a cookie.
                 if (activity.whatchanged.endswith(' status') and
-                    (activity.oldvalue == 'New')):
+                    (activity.oldvalue in ['New', 'Incomplete']) and
+                    (activity.newvalue in ['Confirmed', 'Triaged'])):
                     status_toucher = activity.person.name
                     if (not triage_timestamp or
                         activity.datechanged > triage_timestamp):
