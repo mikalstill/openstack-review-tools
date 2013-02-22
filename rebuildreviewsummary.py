@@ -22,11 +22,13 @@ def RebuildSummary():
     reviews_cursor = feedutils.GetCursor()
 
     users_cursor.execute('select distinct(username) from reviews;')
-    for user in users_cursor:
+    for user_row in users_cursor:
+        print user_row['username']
         dates_cursor.execute('select distinct(date(timestamp)) '
                              'from reviews where username = "%s";'
                              % user_row['username'])
         for date_row in dates_cursor:
+            print '  %s' % date_row['(date(timestamp))']
             timestamp = sql.FormatSqlValue('timestamp',
                                            date_row['(date(timestamp))'])
             summary = {'__total__': 0}
