@@ -43,13 +43,15 @@ def RebuildSummary():
                 summary['__total__'] += 1
 
             epoch = time.mktime(review['timestamp'].timetuple())
-            cursor.execute('delete from reviewsummary where '
-                           'username="%s" and day=date(%s);'
-                           %(username, timestamp))
-            cursor.execute('insert into reviewsummary'
-                           '(day, username, data, epoch) '
-                           'values (date(%s), "%s", \'%s\', %d);'
-                           %(timestamp, username, json.dumps(summary), epoch))
+            reviews_cursor.execute('delete from reviewsummary where '
+                                   'username="%s" and day=date(%s);'
+                                   %(username, timestamp))
+            reviews_cursor.execute('insert into reviewsummary'
+                                   '(day, username, data, epoch) '
+                                   'values (date(%s), "%s", \'%s\', %d);'
+                                   %(timestamp, username, json.dumps(summary),
+                                     epoch))
+            reviews_cursor.execute('commit;')
 
 
 if __name__ == '__main__':
