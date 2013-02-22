@@ -152,7 +152,7 @@ def ScrapeProject(projectname, days):
                     summary['__total__'] += 1
 
                     cursor.execute('delete from bugtriagesummary where '
-                                   'usersummary="%s" and day=date(%s);'
+                                   'username="%s" and day=date(%s);'
                                    %(status_toucher, timestamp))
                     cursor.execute('insert into bugtriagesummary'
                                    '(day, username, data, epoch) '
