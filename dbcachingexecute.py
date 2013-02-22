@@ -23,6 +23,11 @@ def Execute(db, last_change, cmd_name, cmd, arg, cleanup=False):
   except:
     pass
 
+  cursor.execute('delete from commands_%s where arg="%s" and epoch < %s;'
+                 %(cmd_name, arg, last_change))
+  print ' ... Cleaned up %d old cache entries' % cursor.rowcount
+  cursor.execute('commit;')
+
   cursor.execute('select timestamp, epoch, result from commands_%s '
                  'where arg="%s" order by timestamp desc limit 1;'
                  %(cmd_name, arg))
