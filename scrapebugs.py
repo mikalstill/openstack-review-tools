@@ -29,6 +29,7 @@ def ScrapeProject(projectname):
         days = 2
     else:
         days = 1000
+    print 'Fetching %d days of bugs' % days
 
     now = datetime.datetime.now()
     since = datetime.datetime(now.year, now.month, now.day)
