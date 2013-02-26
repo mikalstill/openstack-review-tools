@@ -65,7 +65,10 @@ function HandleClick() {
   xmlhttp = new XMLHttpRequest();
   xmlhttp.onreadystatechange = StateEngine;
   responsepos = 0;
-  xmlhttp.open("GET", "http://openstack.stillhq.com/reviews/" + datafeed + ".cgi?reviewers=" + selected, true);
+
+  var url = "http://openstack.stillhq.com/reviews/" + datafeed + ".cgi?reviewers=" + selected;
+  console.log("Fetching " + url);
+  xmlhttp.open("GET", url, true);
   xmlhttp.send();
 
   console.log("Request sent");
@@ -119,6 +122,8 @@ var groups = {};
 var initial = {};
 
 function StateEngine() {
+    console.log("State engine sees ready state " + xmlhttp.readyState);
+
     if (xmlhttp.readyState == 3) {
       try {
         newdata = xmlhttp.responseText.substr(responsepos);
@@ -211,5 +216,7 @@ function StateEngine() {
 }
 
 xmlhttp.onreadystatechange = StateEngine;
-xmlhttp.open("GET", "http://openstack.stillhq.com/reviews/" + datafeed + ".cgi", true);
+var url = "http://openstack.stillhq.com/reviews/" + datafeed + ".cgi?";
+console.log("Fetching " + url);
+xmlhttp.open("GET", url, true);
 xmlhttp.send();

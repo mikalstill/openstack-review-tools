@@ -39,14 +39,23 @@ def SendGroups(cursor):
                 'payload': groups})
 
 def SendReviewers(cursor, window_size):
+    SendUsers(cursor, window_size, 'reviewsummary')
+
+
+def SendTriagers(cursor, window_size):
+    SendUsers(cursor, window_size,'bugtriagesummary')
+
+
+def SendUsers(cursor, window_size, table):
     one_day = datetime.timedelta(days=1)
     start_of_window = datetime.datetime.now()
     start_of_window -= one_day * window_size
 
     all_reviewers = []
-    cursor.execute('select distinct(username), max(day) from reviewsummary '
+    cursor.execute('select distinct(username), max(day) from %s '
                    'where day > date(%s) group by username;'
-                   % sql.FormatSqlValue('timestamp', start_of_window))
+                   %(table,
+                     sql.FormatSqlValue('timestamp', start_of_window)))
     for row in cursor:
       all_reviewers.append((row['username'], row['max(day)'].isoformat()))
     SendPacket({'type': 'users-all',
