@@ -13,7 +13,7 @@ $(function () {
     });
 });
 
-function GenerateChart(style, data) {
+function GenerateChart(style, title, data) {
     chart = new Highcharts.Chart({
         chart: {
             renderTo: 'container',
@@ -21,7 +21,7 @@ function GenerateChart(style, data) {
             marginRight: 10,
         },
         title: {
-            text: 'Code reviews'
+            text: title,
         },
         xAxis: {
             type: 'datetime',
@@ -51,13 +51,15 @@ function GenerateChart(style, data) {
 
 
 function HandleClick() {
-  var selected = ""
+  var selected_list = [];
+  var selected = "";
 
   for(i = 0; i < allusers.length; i++) {
     if (document.getElementById("reviewer-" + allusers[i]).checked) {
-      selected = selected + "+" + allusers[i];
+      selected_list.push(allusers[i].replace("+", "%2B"));
     }
   }
+  selected = selected_list.join("+");
 
   console.log("New HTTP request: " + selected);
   xmlhttp.abort();
@@ -72,6 +74,7 @@ function HandleClick() {
   xmlhttp.send();
 
   console.log("Request sent");
+  window.location.search = "?reviewers=" + selected;
 }
 
 function SetGroup(name) {
@@ -182,7 +185,7 @@ function StateEngine() {
                              'data': initial[users[i]]})
               }
 
-              GenerateChart(graphstyle, series);
+              GenerateChart(graphstyle, graphtitle, series);
               break;
 
             case "update-value":
@@ -215,8 +218,12 @@ function StateEngine() {
     }
 }
 
+// Get URL param
+var params = window.location.search;
+console.log("Calling params are " + params);
+
 xmlhttp.onreadystatechange = StateEngine;
-var url = "http://openstack.stillhq.com/reviews/" + datafeed + ".cgi?";
+var url = "http://openstack.stillhq.com/reviews/" + datafeed + ".cgi" + params;
 console.log("Fetching " + url);
 xmlhttp.open("GET", url, true);
 xmlhttp.send();

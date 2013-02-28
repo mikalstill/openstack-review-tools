@@ -123,6 +123,13 @@ def ScrapeProject(projectname, days):
                         activity.datechanged > triage_timestamp):
                        triage_timestamp = activity.datechanged
 
+                # Marking a bug as invalid is a special super cookie!
+                if (activity.whatchanged.endswith(' status') and
+                    (activity.newvalue in ['Invalid', 'Opinion'])):
+                    status_toucher = activity.person.name
+                    importance_toucher = activity.person.name
+                    triage_timestamp = activity.datechanged
+
         if (status_toucher and importance_toucher and
             (status_toucher == importance_toucher)):
             sys.stderr.write('  *** %s triaged this ticket **\n'

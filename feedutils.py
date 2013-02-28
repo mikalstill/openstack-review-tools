@@ -38,6 +38,18 @@ def SendGroups(cursor):
     SendPacket({'type': 'groups',
                 'payload': groups})
 
+
+def GetGroupMembers(cursor, groupname):
+    members = []
+    cursor.execute('select * from groups where name="%s";'
+                   % groupname)
+    if cursor.rowcount > 0:
+      row = cursor.fetchone()
+      for member in row['members'].split(' '):
+        members.append(member)
+    return members
+
+
 def SendReviewers(cursor, window_size):
     SendUsers(cursor, window_size, 'reviewsummary')
 

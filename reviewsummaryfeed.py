@@ -18,12 +18,12 @@ if __name__ == '__main__':
     print '\r'
     sys.stdout.flush()
 
+    cursor = feedutils.GetCursor()
+
     showusers = ['mikalstill']
     form = cgi.FieldStorage()
     if form.has_key('reviewers'):
       showusers = form['reviewers'].value.lstrip(' ').split(' ')
-
-    cursor = feedutils.GetCursor()
 
     # Fetch the last seven days of results to start off with
     last_time = 0
