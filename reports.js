@@ -165,7 +165,12 @@ function StateEngine() {
               for (i=0; i < packet.payload.length; i++) {
                 console.log("Create user: " + packet.payload[i])
                 initial[packet.payload[i]] = [];
-                document.getElementById("reviewer-" + packet.payload[i]).checked = true;
+                try {
+                  document.getElementById("reviewer-" + packet.payload[i]).checked = true;
+                }
+                catch (err) {
+                  console.log("Error: " + err);
+                }
               }
               users = packet.payload;
               break;

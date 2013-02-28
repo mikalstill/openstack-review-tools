@@ -23,7 +23,7 @@ if __name__ == '__main__':
     showusers = ['mikalstill']
     form = cgi.FieldStorage()
     if form.has_key('reviewers'):
-      showusers = form['reviewers'].value.lstrip(' ').split(' ')
+      showusers = feedutils.ResolveGroupMembers(cursor, form['reviewers'].value)
 
     # Fetch the last seven days of results to start off with
     last_time = 0

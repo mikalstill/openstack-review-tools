@@ -50,6 +50,22 @@ def GetGroupMembers(cursor, groupname):
     return members
 
 
+def ResolveGroupMembers(cursor, usersliststring):
+    showusers = []
+
+    for userish in usersliststring.lstrip(' ').split(' '):
+      if userish.startswith('g:'):
+        for user in GetGroupMembers(cursor, userish.split(':')[1]):
+          showusers.append(user)
+      else:
+        showusers.append(userish)
+
+    if len(showusers) == 0:
+      showusers = ['mikalstill']
+
+    return showusers
+
+
 def SendReviewers(cursor, window_size):
     SendUsers(cursor, window_size, 'reviewsummary')
 
