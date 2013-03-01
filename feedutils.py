@@ -71,7 +71,11 @@ def SendReviewers(cursor, window_size):
 
 
 def SendTriagers(cursor, window_size):
-    SendUsers(cursor, window_size,'bugtriagesummary')
+    SendUsers(cursor, window_size, 'bugtriagesummary')
+
+
+def SendClosers(cursor, window_size):
+    SendUsers(cursor, window_size, 'bugclosesummary')
 
 
 def SendUsers(cursor, window_size, table):
