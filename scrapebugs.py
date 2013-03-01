@@ -147,32 +147,66 @@ def ScrapeProject(projectname, days):
                                      timestamp))
 
                     for row in cursor:
-                        subcursor.execute('update bugs%s set '
-                                          'closedby="%s" where id=%s '
-                                          'and component="%s";'
-                                          %(VERSION, row['post'], b.bug.id,
-                                            projectname))
-                        subcursor.execute('commit;')
-                        print '  *** %s closed this bug ***' % row['post']
+                        user = row['post']
+                        if WRITE:
+                            subcursor.execute('update bugs%s set '
+                                              'closedby="%s" where id=%s '
+                                              'and component="%s";'
+                                              %(VERSION, user, b.bug.id,
+                                                projectname))
+                            subcursor.execute('commit;')
+                            print '  *** %s closed this bug ***' % user
 
-                        subcursor.execute('insert ignore into bugclose%s '
-                                          '(id, component, timestamp, username) '
-                                          'values(%s, "%s", %s, "%s");'
-                                          %(VERSION, b.bug.id, projectname,
-                                          timestamp, row['post']))
-                        if subcursor.rowcount > 0:
-                            print '  New close for %s' % row['post']
-                        subcursor.execute('commit;')
+                            subcursor.execute('insert ignore into bugclose%s '
+                                              '(id, component, timestamp, '
+                                              'username) '
+                                              'values(%s, "%s", %s, "%s");'
+                                              %(VERSION, b.bug.id, projectname,
+                                                timestamp, user))
+                            if subcursor.rowcount > 0:
+                                print '  New close for %s' % user
+
+                                cursor.execute('select * from '
+                                               'bugclosesummary%s where '
+                                               'username="%s" and day=date(%s);'
+                                               %(VERSION, user,
+                                                 timestamp))
+                                if cursor.rowcount > 0:
+                                    row = cursor.fetchone()
+                                    summary = json.loads(row['data'])
+                                else:
+                                    summary = {}
+
+                                summary.setdefault(projectname, 0)
+                                summary.setdefault('__total__', 0)
+                                summary[projectname] += 1
+                                summary['__total__'] += 1
+
+                                cursor.execute('delete from bugclosesummary%s '
+                                               'where username="%s" and '
+                                               'day=date(%s);'
+                                               %(VERSION, user,
+                                                 timestamp))
+                                cursor.execute('insert into bugclosesummary%s'
+                                               '(day, username, data, epoch) '
+                                               'values (date(%s), "%s", '
+                                               '\'%s\', %d);'
+                                               %(VERSION, timestamp, user,
+                                                 json.dumps(summary),
+                                                 int(time.time())))
+
+                                subcursor.execute('commit;')
 
                 # A bug was unfixed
                 if(activity.whatchanged.endswith(' status') and
                    (activity.oldvalue in ['Fix Committed']) and
                    (not activity.newvalue in ['Fix Released'])):
-                   cursor.execute('update bugs%s set closedby = null '
-                                  'where id=%s and component="%s";'
-                                  %(VERSION, b.bug.id, projectname))
-                   cursor.execute('commit;')
-                   print '  *** This bug was unclosed ***'
+                    if WRITE:
+                        cursor.execute('update bugs%s set closedby = null '
+                                       'where id=%s and component="%s";'
+                                       %(VERSION, b.bug.id, projectname))
+                        cursor.execute('commit;')
+                    print '  *** This bug was unclosed ***'
 
         if (status_toucher and importance_toucher and
             (status_toucher == importance_toucher)):
