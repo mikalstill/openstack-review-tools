@@ -18,6 +18,8 @@ CACHEDIR = '/tmp/launchpadlib-cache'
 PERSON_RE = re.compile('.* \((.*)\)')
 WRITE = True
 VERSION = ''
+ONLY = []
+FORCEDAYS = None
 
 
 def ScrapeProject(projectname, days):
@@ -33,12 +35,16 @@ def ScrapeProject(projectname, days):
 
     bugs = proj.searchTasks(modified_since=since)
     for b in bugs:
+        if ONLY and b.bug.id not in ONLY:
+            print 'Skipping %s' % b.bug.id
+            continue
+
         status_toucher = None
         importance_toucher = None
         triage_timestamp = None
 
-        sys.stderr.write('\n%s\n' % b.title)
-        sys.stderr.write('Reported by: %s\n' % b.bug.owner.display_name)
+        print '\n%s' % b.title
+        print 'Reported by: %s' % b.bug.owner.name
         if WRITE:
             cursor.execute('insert ignore into bugs%s '
                            '(id, title, reporter, timestamp, component) '
@@ -52,9 +58,9 @@ def ScrapeProject(projectname, days):
             cursor.execute('commit;')
 
         for bugtask in b.bug.bug_tasks:
-            sys.stderr.write('  Targetted to %s on %s by %s\n'
-                             %(bugtask.bug_target_name, bugtask.date_created,
-                               bugtask.owner.name))
+            print ('  Targetted to %s on %s by %s'
+                   %(bugtask.bug_target_name, bugtask.date_created,
+                     bugtask.owner.name))
 
             if WRITE:
                 timestamp = sql.FormatSqlValue('timestamp',
@@ -69,17 +75,30 @@ def ScrapeProject(projectname, days):
                                  bugtask.bug_target_name))
                 cursor.execute('commit;')
 
+            if bugtask.assignee:
+                time_diff = bugtask.date_assigned - bugtask.date_created
+                if time_diff.seconds < 60:
+                    print ('  *** special case: bug assigned to %s on task '
+                           'creation ***'
+                           % bugtask.assignee)
+                    if WRITE:
+                        timestamp = sql.FormatSqlValue('timestamp',
+                                                       bugtask.date_assigned)
+                        cursor.execute('insert ignore into bugevents%s '
+                                       '(id, component, timestamp, username, '
+                                       'field, pre, post) '
+                                       'values(%s, "%s", %s, "%s", "assignee", "-", '
+                                       '"%s");'
+                                       %(VERSION, b.bug.id, bugtask.bug_target_name,
+                                         timestamp, bugtask.owner.name,
+                                         bugtask.assignee.name))
+                        cursor.execute('commit;')
+                
+
         for activity in b.bug.activity:
             if activity.whatchanged.startswith('%s: ' % projectname):
                 timestamp = sql.FormatSqlValue('timestamp',
                                                activity.datechanged)
-                sys.stderr.write('  %s :: %s -> %s :: %s on %s\n'
-                                 % (activity.whatchanged,
-                                    activity.oldvalue,
-                                    activity.newvalue,
-                                    activity.person.display_name,
-                                    activity.datechanged))
-
                 oldvalue = activity.oldvalue
                 newvalue = activity.newvalue
 
@@ -96,6 +115,13 @@ def ScrapeProject(projectname, days):
                         newvalue = m.group(1)
                 except:
                     pass
+
+                print('  %s :: %s -> %s :: %s on %s'
+                      % (activity.whatchanged,
+                         oldvalue,
+                         newvalue,
+                         activity.person.name,
+                         activity.datechanged))
 
                 if WRITE:
                     cursor.execute('insert ignore into bugevents%s '
@@ -210,8 +236,7 @@ def ScrapeProject(projectname, days):
 
         if (status_toucher and importance_toucher and
             (status_toucher == importance_toucher)):
-            sys.stderr.write('  *** %s triaged this bug ***\n'
-                             % status_toucher)
+            print '  *** %s triaged this bug ***' % status_toucher
             timestamp = sql.FormatSqlValue('timestamp', triage_timestamp)
 
             if WRITE:
@@ -251,25 +276,31 @@ def ScrapeProject(projectname, days):
 
 
 def ScrapeProjectWrapped(projectname, days):
-    try:
-        ScrapeProject(projectname, days)
-    except Exception, e:
-        print e
-        print '*******************'
+    for release in ['', '/austin', '/bexar', '/cactus', '/diablo',
+                    '/essex', '/folsom', '/grizzly', '/havana']:
+        try:
+            ScrapeProject(projectname + release, days)
+        except Exception, e:
+            print '*******************'
+            print '%s%s errored with: %s' %(projectname, release, e)
+            print '*******************'
 
 
 # If we have no data, grab a lot!
-cursor = feedutils.GetCursor()
-cursor.execute('select count(*) from bugevents%s;' % VERSION)
-if cursor.fetchone()['count(*)'] > 0:
-    days = 2
+if FORCEDAYS:
+    days = FORCEDAYS
 else:
-    days = 1000
+    cursor = feedutils.GetCursor()
+    cursor.execute('select count(*) from bugevents%s;' % VERSION)
+    if cursor.fetchone()['count(*)'] > 0:
+        days = 2
+    else:
+        days = 1000
 print 'Fetching %d days of bugs' % days
 
 ScrapeProjectWrapped('nova', days)
 ScrapeProjectWrapped('openstack-common', days)
-ScrapeProjectWrapped('oslo-incubator', days)
+ScrapeProjectWrapped('oslo', days)
 ScrapeProjectWrapped('glance', days)
 ScrapeProjectWrapped('horizon', days)
 ScrapeProjectWrapped('keystone', days)
