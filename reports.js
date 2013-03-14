@@ -221,6 +221,9 @@ function StateEngine() {
         console.log("Error: " + err);
       }
     }
+    else {
+      xmlhttp.onreadystatechange = StateEngine;
+    }
 }
 
 // Get URL param

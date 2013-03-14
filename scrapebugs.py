@@ -24,7 +24,7 @@ FORCEDAYS = None
 
 def ScrapeProject(projectname, days):
     launchpad = Launchpad.login_with('openstack-lp-scripts', 'production',
-                                     CACHEDIR, version='devel')
+                                     CACHEDIR)
     proj = launchpad.projects[projectname]
     cursor = feedutils.GetCursor()
     subcursor = feedutils.GetCursor()
@@ -36,7 +36,6 @@ def ScrapeProject(projectname, days):
     bugs = proj.searchTasks(modified_since=since)
     for b in bugs:
         if ONLY and b.bug.id not in ONLY:
-            print 'Skipping %s' % b.bug.id
             continue
 
         status_toucher = None
