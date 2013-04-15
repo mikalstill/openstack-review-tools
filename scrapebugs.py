@@ -33,7 +33,16 @@ def ScrapeProject(projectname, days):
     since = datetime.datetime(now.year, now.month, now.day)
     since -= datetime.timedelta(days=days)
 
-    bugs = proj.searchTasks(modified_since=since)
+    bugs = proj.searchTasks(modified_since=since,
+                            status=["New",
+                                    "Incomplete",
+                                    "Invalid",
+                                    "Won't Fix",
+                                    "Confirmed",
+                                    "Triaged",
+                                    "In Progress",
+                                    "Fix Committed",
+                                    "Fix Released"])
     for b in bugs:
         if ONLY and b.bug.id not in ONLY:
             continue
@@ -56,6 +65,12 @@ def ScrapeProject(projectname, days):
                              projectname))
             cursor.execute('commit;')
 
+            for dup in getattr(b.bug, 'duplicates', []):
+                print 'Duplicate: %s' % dup.id
+                cursor.execute('update bugs%s set duplicateof=%s where id=%s;'
+                               %(VERSION, b.bug.id, dup.id))
+                cursor.execute('commit;')
+
         for bugtask in b.bug.bug_tasks:
             print ('  Targetted to %s on %s by %s'
                    %(bugtask.bug_target_name, bugtask.date_created,
@@ -72,6 +87,22 @@ def ScrapeProject(projectname, days):
                                %(VERSION, b.bug.id, bugtask.bug_target_name,
                                  timestamp, bugtask.owner.name,
                                  bugtask.bug_target_name))
+                cursor.execute('insert ignore into bugevents%s '
+                               '(id, component, timestamp, username, '
+                               'field, pre, post) '
+                               'values(%s, "%s", %s, "%s", "importance", "-", '
+                               '"%s");'
+                               %(VERSION, b.bug.id, bugtask.bug_target_name,
+                                 timestamp, bugtask.owner.name,
+                                 bugtask.importance))
+                cursor.execute('insert ignore into bugevents%s '
+                               '(id, component, timestamp, username, '
+                               'field, pre, post) '
+                               'values(%s, "%s", %s, "%s", "status", "-", '
+                               '"%s");'
+                               %(VERSION, b.bug.id, bugtask.bug_target_name,
+                                 timestamp, bugtask.owner.name,
+                                 bugtask.status))
                 cursor.execute('commit;')
 
             if bugtask.assignee:
@@ -92,7 +123,6 @@ def ScrapeProject(projectname, days):
                                          timestamp, bugtask.owner.name,
                                          bugtask.assignee.name))
                         cursor.execute('commit;')
-                
 
         for activity in b.bug.activity:
             if activity.whatchanged.startswith('%s: ' % projectname):
