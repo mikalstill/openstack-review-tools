@@ -13,17 +13,9 @@ import MySQLdb
 import feedutils
 import sql
 
-if __name__ == '__main__':
-    print 'Content-Type: text/plain\r'
-    print '\r'
-    sys.stdout.flush()
 
+def GetInitial(showusers):
     cursor = feedutils.GetCursor()
-
-    showusers = ['mikalstill']
-    form = cgi.FieldStorage()
-    if form.has_key('reviewers'):
-      showusers = feedutils.ResolveGroupMembers(cursor, form['reviewers'].value)
 
     # Fetch the last seven days of results to start off with
     last_time = 0
@@ -62,6 +54,11 @@ if __name__ == '__main__':
             day += one_day
 
     feedutils.SendPacket({'type': 'initial-value-ends'})
+    return last_time
+
+
+def GetUpdates(showusers, last_time):
+    cursor = feedutils.GetCursor()
 
     # Then dump updates as they happen
     while True:
@@ -74,9 +71,12 @@ if __name__ == '__main__':
                             %(last_time, datetime.datetime.now()))
 
         for username in showusers:
+            ts = datetime.datetime.now()
+            ts -= datetime.timedelta(days=5)
             cursor.execute('select * from reviewsummary where username="%s" and '
-                           'epoch > %d;'
-                           %(username, last_time))
+                           'epoch > %d and date > %s;'
+                           %(username, last_time,
+                             sql.FormatSqlValue('timestamp', ts)))
 
             for row in cursor:
                 feedutils.SendPacket({'type': 'update-value',
@@ -87,3 +87,19 @@ if __name__ == '__main__':
 
                 if row['epoch'] > last_time:
                     last_time = row['epoch']
+
+
+if __name__ == '__main__':
+    print 'Content-Type: text/plain\r'
+    print '\r'
+    sys.stdout.flush()
+
+    cursor = feedutils.GetCursor()
+    showusers = ['mikalstill']
+    form = cgi.FieldStorage()
+    if form.has_key('reviewers'):
+        showusers = feedutils.ResolveGroupMembers(cursor, form['reviewers'].value)
+
+    last_time = GetInitial(showusers)
+    GetUpdates(showusers, last_time)
+
