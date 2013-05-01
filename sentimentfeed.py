@@ -31,7 +31,7 @@ if __name__ == '__main__':
     last_timestamp = datetime.datetime(1970, 1, 1)
 
     feedutils.SendGroups(cursor)
-    feedutils.SendReviewers(cursor, initial_size)
+    feedutils.SendReviewers(cursor, '__total__', initial_size)
     feedutils.SendPacket({'type': 'users-present',
                           'payload': showusers})
 

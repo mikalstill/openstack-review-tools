@@ -66,8 +66,8 @@ def ResolveGroupMembers(cursor, usersliststring):
     return showusers
 
 
-def SendReviewers(cursor, window_size):
-    SendUsers(cursor, window_size, 'reviewsummary')
+def SendReviewers(cursor, project, window_size):
+    SendUsers(cursor, window_size, 'reviewsummary', project=project)
 
 
 def SendTriagers(cursor, window_size):
@@ -78,18 +78,22 @@ def SendClosers(cursor, window_size):
     SendUsers(cursor, window_size, 'bugclosesummary')
 
 
-def SendUsers(cursor, window_size, table):
+def SendUsers(cursor, window_size, table, project=None):
     one_day = datetime.timedelta(days=1)
     start_of_window = datetime.datetime.now()
     start_of_window -= one_day * window_size
 
+    plike = '%'
+    if project:
+        plike = '%%%s%%' % project
+
     all_reviewers = []
     cursor.execute('select distinct(username), max(day) from %s '
-                   'where day > date(%s) group by username;'
-                   %(table,
+                   'where data like "%s" and day > date(%s) group by username;'
+                   %(table, plike,
                      sql.FormatSqlValue('timestamp', start_of_window)))
     for row in cursor:
-      all_reviewers.append((row['username'], row['max(day)'].isoformat()))
+        all_reviewers.append((row['username'], row['max(day)'].isoformat()))
     SendPacket({'type': 'users-all',
                 'payload': all_reviewers})
 

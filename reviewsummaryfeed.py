@@ -14,7 +14,7 @@ import feedutils
 import sql
 
 
-def GetInitial(showusers):
+def GetInitial(showusers, project):
     cursor = feedutils.GetCursor()
 
     # Fetch the last seven days of results to start off with
@@ -23,7 +23,7 @@ def GetInitial(showusers):
     one_day = datetime.timedelta(days=1)
 
     feedutils.SendGroups(cursor)
-    feedutils.SendReviewers(cursor, initial_size)
+    feedutils.SendReviewers(cursor, project, initial_size)
     feedutils.SendPacket({'type': 'users-present',
                           'payload': showusers})
 
@@ -42,7 +42,7 @@ def GetInitial(showusers):
                       'day': day.isoformat()}
             if cursor.rowcount > 0:
                 row = cursor.fetchone()
-                packet['payload'] = json.loads(row['data'])['__total__']
+                packet['payload'] = json.loads(row['data']).get(project, 0)
                 packet['written-at'] = row['epoch']
 
                 if row['epoch'] > last_time:
@@ -57,7 +57,7 @@ def GetInitial(showusers):
     return last_time
 
 
-def GetUpdates(showusers, last_time):
+def GetUpdates(showusers, project, last_time):
     cursor = feedutils.GetCursor()
 
     # Then dump updates as they happen
@@ -74,7 +74,7 @@ def GetUpdates(showusers, last_time):
             ts = datetime.datetime.now()
             ts -= datetime.timedelta(days=5)
             cursor.execute('select * from reviewsummary where username="%s" and '
-                           'epoch > %d and date > %s;'
+                           'epoch > %d and day > date(%s);'
                            %(username, last_time,
                              sql.FormatSqlValue('timestamp', ts)))
 
@@ -83,7 +83,7 @@ def GetUpdates(showusers, last_time):
                                       'user': username,
                                       'written-at': row['epoch'],
                                       'day': row['day'].isoformat(),
-                                      'payload': json.loads(row['data'])['__total__']})
+                                      'payload': json.loads(row['data']).get(project, 0)})
 
                 if row['epoch'] > last_time:
                     last_time = row['epoch']
@@ -95,11 +95,16 @@ if __name__ == '__main__':
     sys.stdout.flush()
 
     cursor = feedutils.GetCursor()
-    showusers = ['mikalstill']
     form = cgi.FieldStorage()
     if form.has_key('reviewers'):
         showusers = feedutils.ResolveGroupMembers(cursor, form['reviewers'].value)
+    else:
+        showusers = ['mikalstill']
 
-    last_time = GetInitial(showusers)
-    GetUpdates(showusers, last_time)
+    if form.has_key('project'):
+        project = form['project'].value
+    else:
+        project = '__total__'
 
+    last_time = GetInitial(showusers, project)
+    GetUpdates(showusers, project, last_time)

@@ -61,6 +61,8 @@ function HandleClick() {
   }
   selected = selected_list.join("+");
 
+  project = "__total__"
+
   console.log("New HTTP request: " + selected);
   xmlhttp.abort();
   
@@ -68,13 +70,13 @@ function HandleClick() {
   xmlhttp.onreadystatechange = StateEngine;
   responsepos = 0;
 
-  var url = "http://openstack.stillhq.com/reviews/" + datafeed + ".cgi?reviewers=" + selected;
+  var url = "http://openstack.stillhq.com/reviews/" + datafeed + ".cgi?reviewers=" + selected + "&project=" + project;
   console.log("Fetching " + url);
   xmlhttp.open("GET", url, true);
   xmlhttp.send();
 
   console.log("Request sent");
-  window.location.search = "?reviewers=" + selected;
+  window.location.search = "?reviewers=" + selected + "&project=" + project;
 }
 
 function SetGroup(name) {
