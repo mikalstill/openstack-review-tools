@@ -30,34 +30,25 @@ def UpdateTrackingTables(eventname, b, projectname, timestamp, user):
                       'values(%s, "%s", %s, "%s");'
                       %(eventname, VERSION, b.bug.id, projectname, timestamp,
                         user))
-    if subcursor.rowcount > 0:
-        print '  New event for %s' % user
-        subcursor.execute('select * from '
-                       'bug%ssummary%s where '
-                       'username="%s" and day=date(%s);'
-                       %(eventname, VERSION, user, timestamp))
-        if subcursor.rowcount > 0:
-            row = subcursor.fetchone()
-            summary = json.loads(row['data'])
-        else:
-            summary = {}
 
-        summary.setdefault(projectname, 0)
-        summary.setdefault('__total__', 0)
-        summary[projectname] += 1
+    summary = {'__total__': 0}
+    subcursor.execute('select * from bug%s%s where '
+                      'username = "%s" and date(timestamp) = %s '
+                      'order by timestamp asc;'
+                      %(eventname, VERSION, user, timestamp))
+    for triage in subcursor:
+        summary.setdefault(triage['component'], 0)
+        summary[triage['component']] += 1
         summary['__total__'] += 1
 
-        subcursor.execute('delete from bug%ssummary%s '
-                          'where username="%s" and '
-                          'day=date(%s);'
+        subcursor.execute('delete from bug%ssummary%s where '
+                          'username="%s" and day=date(%s);'
                           %(eventname, VERSION, user, timestamp))
         subcursor.execute('insert into bug%ssummary%s'
                           '(day, username, data, epoch) '
-                          'values (date(%s), "%s", '
-                          '\'%s\', %d);'
+                          'values (date(%s), "%s", \'%s\', %d);'
                           %(eventname, VERSION, timestamp, user,
                             json.dumps(summary), int(time.time())))
-
     subcursor.execute('commit;')
 
 
