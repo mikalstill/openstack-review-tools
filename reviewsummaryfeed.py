@@ -21,9 +21,13 @@ if __name__ == '__main__':
 
     cursor = feedutils.GetCursor()
     form = cgi.FieldStorage()
+
+    initial_size = 30
+
     if form.has_key('reviewers'):
         showusers = feedutils.ResolveGroupMembers(cursor,
-                                                  form['reviewers'].value)
+                                                  form['reviewers'].value,
+                                                  initial_size)
     else:
         showusers = ['mikalstill']
 
@@ -32,5 +36,6 @@ if __name__ == '__main__':
     else:
         project = '__total__'
 
-    last_time = feedutils.GetInitial('review', showusers, project)
+    last_time = feedutils.GetInitial('review', showusers, project,
+                                     initial_size)
     feedutils.GetUpdates('review', showusers, project, last_time)

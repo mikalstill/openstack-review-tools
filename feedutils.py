@@ -50,18 +50,28 @@ def GetGroupMembers(cursor, groupname):
     return members
 
 
-def ResolveGroupMembers(cursor, usersliststring):
+def ResolveGroupMembers(cursor, usersliststring, window_size):
     showusers = []
 
     for userish in usersliststring.lstrip(' ').split(' '):
-      if userish.startswith('g:'):
-        for user in GetGroupMembers(cursor, userish.split(':')[1]):
-          showusers.append(user)
-      else:
-        showusers.append(userish)
+        if userish.startswith('g:'):
+            group_name = userish.split(':')[1]
+            if group_name == 'all':
+                cursor.execute('select distinct(username), max(day) from %s '
+                               'where day > date(%s) group by username;'
+                               %(table,
+                                 sql.FormatSqlValue('timestamp',
+                                                    start_of_window)))
+                for row in cursor:
+                    showusers.append(row['username'])
+            else:
+                for user in GetGroupMembers(cursor, group_name):
+                    showusers.append(user)
+        else:
+            showusers.append(userish)
 
     if len(showusers) == 0:
-      showusers = ['mikalstill']
+        showusers = ['mikalstill']
 
     return showusers
 
@@ -103,12 +113,11 @@ def SendDebug(message):
                 'payload': message})
 
 
-def GetInitial(eventname, showusers, project):
+def GetInitial(eventname, showusers, project, initial_size):
     cursor = GetCursor()
 
     # Fetch the last seven days of results to start off with
     last_time = 0
-    initial_size = 30
     one_day = datetime.timedelta(days=1)
 
     SendGroups(cursor)
