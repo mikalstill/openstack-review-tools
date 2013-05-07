@@ -23,6 +23,7 @@ FORCEDAYS = None
 
 
 def UpdateTrackingTables(eventname, b, projectname, timestamp, user):
+    subcursor = feedutils.GetCursor()
     subcursor.execute('insert ignore into bug%s%s '
                       '(id, component, timestamp, '
                       'username) '
