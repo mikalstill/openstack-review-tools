@@ -30,14 +30,15 @@ def UpdateTrackingTables(eventname, b, projectname, timestamp, user):
                       'values(%s, "%s", %s, "%s");'
                       %(eventname, VERSION, b.bug.id, projectname, timestamp,
                         user))
+    subcursor.execute('commit;')
     if subcursor.rowcount > 0:
         print '  New close for %s' % user
-        cursor.execute('select * from '
+        subcursor.execute('select * from '
                        'bug%ssummary%s where '
                        'username="%s" and day=date(%s);'
                        %(eventname, VERSION, user, timestamp))
-        if cursor.rowcount > 0:
-            row = cursor.fetchone()
+        if subcursor.rowcount > 0:
+            row = subcursor.fetchone()
             summary = json.loads(row['data'])
         else:
             summary = {}
@@ -47,16 +48,17 @@ def UpdateTrackingTables(eventname, b, projectname, timestamp, user):
         summary[projectname] += 1
         summary['__total__'] += 1
 
-        cursor.execute('delete from bug%ssummary%s '
-                       'where username="%s" and '
-                       'day=date(%s);'
-                       %(eventname, VERSION, user, timestamp))
-        cursor.execute('insert into bug%ssummary%s'
-                       '(day, username, data, epoch) '
-                       'values (date(%s), "%s", '
-                       '\'%s\', %d);'
-                       %(eventname, VERSION, timestamp, user,
-                         json.dumps(summary), int(time.time())))
+        subcursor.execute('delete from bug%ssummary%s '
+                          'where username="%s" and '
+                          'day=date(%s);'
+                          %(eventname, VERSION, user, timestamp))
+        subcursor.execute('insert into bug%ssummary%s'
+                          '(day, username, data, epoch) '
+                          'values (date(%s), "%s", '
+                          '\'%s\', %d);'
+                          %(eventname, VERSION, timestamp, user,
+                            json.dumps(summary), int(time.time())))
+        subcursor.execute('commit;')
 
 
 def ScrapeProject(projectname, days):
