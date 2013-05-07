@@ -38,5 +38,5 @@ if __name__ == '__main__':
         project = '__total__'
 
     last_time = feedutils.GetInitial('bugclose', showusers, project,
-                                     intial_size)
+                                     initial_size)
     feedutils.GetUpdates('bugclose', showusers, project, last_time)

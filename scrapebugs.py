@@ -30,9 +30,8 @@ def UpdateTrackingTables(eventname, b, projectname, timestamp, user):
                       'values(%s, "%s", %s, "%s");'
                       %(eventname, VERSION, b.bug.id, projectname, timestamp,
                         user))
-    subcursor.execute('commit;')
     if subcursor.rowcount > 0:
-        print '  New close for %s' % user
+        print '  New event for %s' % user
         subcursor.execute('select * from '
                        'bug%ssummary%s where '
                        'username="%s" and day=date(%s);'
@@ -58,7 +57,8 @@ def UpdateTrackingTables(eventname, b, projectname, timestamp, user):
                           '\'%s\', %d);'
                           %(eventname, VERSION, timestamp, user,
                             json.dumps(summary), int(time.time())))
-        subcursor.execute('commit;')
+
+    subcursor.execute('commit;')
 
 
 def ScrapeProject(projectname, days):
