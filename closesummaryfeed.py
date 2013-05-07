@@ -32,5 +32,5 @@ if __name__ == '__main__':
     else:
         project = '__total__'
 
-    last_time = feedutils.GetInitial('close', showusers, project)
-    feedutils.GetUpdates('close', showusers, project, last_time)
+    last_time = feedutils.GetInitial('bugclose', showusers, project)
+    feedutils.GetUpdates('bugclose', showusers, project, last_time)
