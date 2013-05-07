@@ -50,7 +50,7 @@ def GetGroupMembers(cursor, groupname):
     return members
 
 
-def ResolveGroupMembers(cursor, usersliststring, window_size):
+def ResolveGroupMembers(cursor, usersliststring, table, window_size):
     showusers = []
 
     for userish in usersliststring.lstrip(' ').split(' '):

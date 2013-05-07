@@ -21,12 +21,13 @@ if __name__ == '__main__':
 
     cursor = feedutils.GetCursor()
     form = cgi.FieldStorage()
-    
+
     initial_size = 30
 
     if form.has_key('reviewers'):
         showusers = feedutils.ResolveGroupMembers(cursor,
                                                   form['reviewers'].value,
+                                                  'bugprogress',
                                                   initial_size)
     else:
         showusers = ['mikalstill']
