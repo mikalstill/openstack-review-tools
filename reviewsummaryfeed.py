@@ -14,7 +14,7 @@ import feedutils
 import sql
 
 
-def GetInitial(showusers, project):
+def GetInitial(eventname, showusers, project):
     cursor = feedutils.GetCursor()
 
     # Fetch the last seven days of results to start off with
@@ -23,7 +23,8 @@ def GetInitial(showusers, project):
     one_day = datetime.timedelta(days=1)
 
     feedutils.SendGroups(cursor)
-    feedutils.SendReviewers(cursor, project, initial_size)
+    feedutils.SendUsers(cursor, initial_size, '%ssummary' % eventname,
+                        project=project)
     feedutils.SendPacket({'type': 'users-present',
                           'payload': showusers})
 
@@ -34,9 +35,9 @@ def GetInitial(showusers, project):
         day -= one_day * (initial_size - 1)
         for i in range(initial_size):
             timestamp = sql.FormatSqlValue('timestamp', day)
-            cursor.execute('select * from reviewsummary where username="%s" and '
-                           'day=date(%s);'
-                           %(username, timestamp))
+            cursor.execute('select * from %ssummary where username="%s" '
+                           'and day=date(%s);'
+                           %(eventname, username, timestamp))
             packet = {'type': 'initial-value',
                       'user': username,
                       'day': day.isoformat()}
@@ -57,7 +58,7 @@ def GetInitial(showusers, project):
     return last_time
 
 
-def GetUpdates(showusers, project, last_time):
+def GetUpdates(eventname, showusers, project, last_time):
     cursor = feedutils.GetCursor()
 
     # Then dump updates as they happen
@@ -66,24 +67,25 @@ def GetUpdates(showusers, project, last_time):
 
         # Rebuild the DB connection in case the DB went away
         cursor = feedutils.GetCursor()
-	feedutils.SendKeepAlive()
+        feedutils.SendKeepAlive()
         feedutils.SendDebug('Querying for updates after %d, server time %s'
                             %(last_time, datetime.datetime.now()))
 
         for username in showusers:
             ts = datetime.datetime.now()
             ts -= datetime.timedelta(days=5)
-            cursor.execute('select * from reviewsummary where username="%s" and '
-                           'epoch > %d and day > date(%s);'
-                           %(username, last_time,
+            cursor.execute('select * from %ssummary where username="%s" '
+                           'and epoch > %d and day > date(%s);'
+                           %(eventname, username, last_time,
                              sql.FormatSqlValue('timestamp', ts)))
 
             for row in cursor:
-                feedutils.SendPacket({'type': 'update-value',
-                                      'user': username,
-                                      'written-at': row['epoch'],
-                                      'day': row['day'].isoformat(),
-                                      'payload': json.loads(row['data']).get(project, 0)})
+                feedutils.SendPacket(
+                    {'type': 'update-value',
+                     'user': username,
+                     'written-at': row['epoch'],
+                     'day': row['day'].isoformat(),
+                     'payload': json.loads(row['data']).get(project, 0)})
 
                 if row['epoch'] > last_time:
                     last_time = row['epoch']
@@ -97,7 +99,8 @@ if __name__ == '__main__':
     cursor = feedutils.GetCursor()
     form = cgi.FieldStorage()
     if form.has_key('reviewers'):
-        showusers = feedutils.ResolveGroupMembers(cursor, form['reviewers'].value)
+        showusers = feedutils.ResolveGroupMembers(cursor,
+                                                  form['reviewers'].value)
     else:
         showusers = ['mikalstill']
 

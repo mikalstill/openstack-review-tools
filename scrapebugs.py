@@ -22,6 +22,42 @@ ONLY = []
 FORCEDAYS = None
 
 
+def UpdateTrackingTables(eventname, b, projectname, timestamp, user):
+    subcursor.execute('insert ignore into bug%s%s '
+                      '(id, component, timestamp, '
+                      'username) '
+                      'values(%s, "%s", %s, "%s");'
+                      %(eventname, VERSION, b.bug.id, projectname, timestamp,
+                        user))
+    if subcursor.rowcount > 0:
+        print '  New close for %s' % user
+        cursor.execute('select * from '
+                       'bug%ssummary%s where '
+                       'username="%s" and day=date(%s);'
+                       %(eventname, VERSION, user, timestamp))
+        if cursor.rowcount > 0:
+            row = cursor.fetchone()
+            summary = json.loads(row['data'])
+        else:
+            summary = {}
+
+        summary.setdefault(projectname, 0)
+        summary.setdefault('__total__', 0)
+        summary[projectname] += 1
+        summary['__total__'] += 1
+
+        cursor.execute('delete from bug%ssummary%s '
+                       'where username="%s" and '
+                       'day=date(%s);'
+                       %(eventname, VERSION, user, timestamp))
+        cursor.execute('insert into bug%ssummary%s'
+                       '(day, username, data, epoch) '
+                       'values (date(%s), "%s", '
+                       '\'%s\', %d);'
+                       %(eventname, VERSION, timestamp, user,
+                         json.dumps(summary), int(time.time())))
+
+
 def ScrapeProject(projectname, days):
     launchpad = Launchpad.login_with('openstack-lp-scripts', 'production',
                                      CACHEDIR)
@@ -174,7 +210,7 @@ def ScrapeProject(projectname, days):
                     if (not triage_timestamp or
                         activity.datechanged > triage_timestamp):
                        triage_timestamp = activity.datechanged
-                    
+
                 if (activity.whatchanged.endswith(' importance') and
                     (activity.oldvalue == 'Undecided')):
                     importance_toucher = activity.person.name
@@ -204,45 +240,9 @@ def ScrapeProject(projectname, days):
                     for row in cursor:
                         user = row['post']
                         if WRITE:
-                            subcursor.execute('insert ignore into bugprogress%s '
-                                              '(id, component, timestamp, '
-                                              'username) '
-                                              'values(%s, "%s", %s, "%s");'
-                                              %(VERSION, b.bug.id, projectname,
-                                                timestamp, user))
-                            if subcursor.rowcount > 0:
-                                print '  New progress for %s' % user
-
-                                cursor.execute('select * from '
-                                               'bugprogresssummary%s where '
-                                               'username="%s" and day=date(%s);'
-                                               %(VERSION, user,
-                                                 timestamp))
-                                if cursor.rowcount > 0:
-                                    row = cursor.fetchone()
-                                    summary = json.loads(row['data'])
-                                else:
-                                    summary = {}
-
-                                summary.setdefault(projectname, 0)
-                                summary.setdefault('__total__', 0)
-                                summary[projectname] += 1
-                                summary['__total__'] += 1
-
-                                cursor.execute('delete from bugprogresssummary%s '
-                                               'where username="%s" and '
-                                               'day=date(%s);'
-                                               %(VERSION, user,
-                                                 timestamp))
-                                cursor.execute('insert into bugprogresssummary%s'
-                                               '(day, username, data, epoch) '
-                                               'values (date(%s), "%s", '
-                                               '\'%s\', %d);'
-                                               %(VERSION, timestamp, user,
-                                                 json.dumps(summary),
-                                                 int(time.time())))
-
-                                subcursor.execute('commit;')
+                            UpdateTrackingTables('progress', projectname,
+                                                 timestamp, user)
+                            subcursor.execute('commit;')
 
                 # A bug was marked as fixed
                 if(activity.whatchanged.endswith(' status') and
@@ -267,45 +267,9 @@ def ScrapeProject(projectname, days):
                             subcursor.execute('commit;')
                             print '  *** %s closed this bug ***' % user
 
-                            subcursor.execute('insert ignore into bugclose%s '
-                                              '(id, component, timestamp, '
-                                              'username) '
-                                              'values(%s, "%s", %s, "%s");'
-                                              %(VERSION, b.bug.id, projectname,
-                                                timestamp, user))
-                            if subcursor.rowcount > 0:
-                                print '  New close for %s' % user
-
-                                cursor.execute('select * from '
-                                               'bugclosesummary%s where '
-                                               'username="%s" and day=date(%s);'
-                                               %(VERSION, user,
-                                                 timestamp))
-                                if cursor.rowcount > 0:
-                                    row = cursor.fetchone()
-                                    summary = json.loads(row['data'])
-                                else:
-                                    summary = {}
-
-                                summary.setdefault(projectname, 0)
-                                summary.setdefault('__total__', 0)
-                                summary[projectname] += 1
-                                summary['__total__'] += 1
-
-                                cursor.execute('delete from bugclosesummary%s '
-                                               'where username="%s" and '
-                                               'day=date(%s);'
-                                               %(VERSION, user,
-                                                 timestamp))
-                                cursor.execute('insert into bugclosesummary%s'
-                                               '(day, username, data, epoch) '
-                                               'values (date(%s), "%s", '
-                                               '\'%s\', %d);'
-                                               %(VERSION, timestamp, user,
-                                                 json.dumps(summary),
-                                                 int(time.time())))
-
-                                subcursor.execute('commit;')
+                            UpdateTrackingTables('close', projectname,
+                                                 timestamp, user)
+                            subcursor.execute('commit;')
 
                 # A bug was unfixed
                 if(activity.whatchanged.endswith(' status') and
@@ -324,38 +288,7 @@ def ScrapeProject(projectname, days):
             timestamp = sql.FormatSqlValue('timestamp', triage_timestamp)
 
             if WRITE:
-                cursor.execute('insert ignore into bugtriage%s '
-                               '(id, component, timestamp, username) '
-                               'values(%s, "%s", %s, "%s");'
-                               %(VERSION, b.bug.id, projectname, timestamp,
-                                 status_toucher))
-                if cursor.rowcount > 0:
-                    # This is a new review, we assume we're the only writer
-                    print '  New triage from %s' % status_toucher
-                    cursor.execute('select * from bugtriagesummary%s where '
-                                   'username="%s" and day=date(%s);'
-                                   %(VERSION, status_toucher, timestamp))
-                    if cursor.rowcount > 0:
-                        row = cursor.fetchone()
-                        summary = json.loads(row['data'])
-                    else:
-                        summary = {}
-
-                    summary.setdefault(projectname, 0)
-                    summary.setdefault('__total__', 0)
-                    summary[projectname] += 1
-                    summary['__total__'] += 1
-
-                    cursor.execute('delete from bugtriagesummary%s where '
-                                   'username="%s" and day=date(%s);'
-                                   %(VERSION, status_toucher, timestamp))
-                    cursor.execute('insert into bugtriagesummary%s'
-                                   '(day, username, data, epoch) '
-                                   'values (date(%s), "%s", \'%s\', %d);'
-                                   %(VERSION, timestamp, status_toucher,
-                                     json.dumps(summary),
-                                     int(time.time())))
-
+                UpdateTrackingTables('triage', projectname, timestamp, user)
                 cursor.execute('commit;')
 
 
