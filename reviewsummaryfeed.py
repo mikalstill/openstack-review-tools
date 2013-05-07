@@ -27,7 +27,7 @@ if __name__ == '__main__':
     if form.has_key('reviewers'):
         showusers = feedutils.ResolveGroupMembers(cursor,
                                                   form['reviewers'].value,
-                                                  'review',
+                                                  'reviewsummary',
                                                   initial_size)
     else:
         showusers = ['mikalstill']
