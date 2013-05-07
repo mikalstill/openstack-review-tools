@@ -189,6 +189,61 @@ def ScrapeProject(projectname, days):
                     importance_toucher = activity.person.name
                     triage_timestamp = activity.datechanged
 
+                # Code review sent for a bug
+                if(activity.whatchanged.endswith(' status') and
+                   (activity.newvalue in ['In Progress'])):
+                    # Find out who the bug was assigned to
+                    cursor.execute('select * from bugevents%s where '
+                                   'id=%s and component="%s" and '
+                                   'field="assignee" and '
+                                   'timestamp < %s '
+                                   'order by timestamp desc limit 1;'
+                                   %(VERSION, b.bug.id, projectname,
+                                     timestamp))
+
+                    for row in cursor:
+                        user = row['post']
+                        if WRITE:
+                            subcursor.execute('insert ignore into bugprogress%s '
+                                              '(id, component, timestamp, '
+                                              'username) '
+                                              'values(%s, "%s", %s, "%s");'
+                                              %(VERSION, b.bug.id, projectname,
+                                                timestamp, user))
+                            if subcursor.rowcount > 0:
+                                print '  New progress for %s' % user
+
+                                cursor.execute('select * from '
+                                               'bugprogresssummary%s where '
+                                               'username="%s" and day=date(%s);'
+                                               %(VERSION, user,
+                                                 timestamp))
+                                if cursor.rowcount > 0:
+                                    row = cursor.fetchone()
+                                    summary = json.loads(row['data'])
+                                else:
+                                    summary = {}
+
+                                summary.setdefault(projectname, 0)
+                                summary.setdefault('__total__', 0)
+                                summary[projectname] += 1
+                                summary['__total__'] += 1
+
+                                cursor.execute('delete from bugprogresssummary%s '
+                                               'where username="%s" and '
+                                               'day=date(%s);'
+                                               %(VERSION, user,
+                                                 timestamp))
+                                cursor.execute('insert into bugprogresssummary%s'
+                                               '(day, username, data, epoch) '
+                                               'values (date(%s), "%s", '
+                                               '\'%s\', %d);'
+                                               %(VERSION, timestamp, user,
+                                                 json.dumps(summary),
+                                                 int(time.time())))
+
+                                subcursor.execute('commit;')
+
                 # A bug was marked as fixed
                 if(activity.whatchanged.endswith(' status') and
                    (activity.newvalue in ['Fix Committed'])):
