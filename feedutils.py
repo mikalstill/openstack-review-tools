@@ -66,10 +66,6 @@ def ResolveGroupMembers(cursor, usersliststring):
     return showusers
 
 
-def SendReviewers(cursor, project, window_size):
-    SendUsers(cursor, window_size, 'reviewsummary', project=project)
-
-
 def SendTriagers(cursor, window_size):
     SendUsers(cursor, window_size, 'bugtriagesummary')
 
@@ -105,3 +101,75 @@ def SendKeepAlive():
 def SendDebug(message):
     SendPacket({'type': 'debug',
                 'payload': message})
+
+
+def GetInitial(eventname, showusers, project):
+    cursor = GetCursor()
+
+    # Fetch the last seven days of results to start off with
+    last_time = 0
+    initial_size = 30
+    one_day = datetime.timedelta(days=1)
+
+    SendGroups(cursor)
+    SendUsers(cursor, initial_size, '%ssummary' % eventname, project=project)
+    SendPacket({'type': 'users-present', 'payload': showusers})
+
+    for username in showusers:
+        day = datetime.datetime.now()
+        day = datetime.datetime(day.year, day.month, day.day)
+
+        day -= one_day * (initial_size - 1)
+        for i in range(initial_size):
+            timestamp = sql.FormatSqlValue('timestamp', day)
+            cursor.execute('select * from %ssummary where username="%s" '
+                           'and day=date(%s);'
+                           %(eventname, username, timestamp))
+            packet = {'type': 'initial-value',
+                      'user': username,
+                      'day': day.isoformat()}
+            if cursor.rowcount > 0:
+                row = cursor.fetchone()
+                packet['payload'] = json.loads(row['data']).get(project, 0)
+                packet['written-at'] = row['epoch']
+
+                if row['epoch'] > last_time:
+                    last_time = row['epoch']
+            else:
+                packet['payload'] = 0
+
+            SendPacket(packet)
+            day += one_day
+
+    SendPacket({'type': 'initial-value-ends'})
+    return last_time
+
+
+def GetUpdates(eventname, showusers, project, last_time):
+    while True:
+        time.sleep(60)
+
+        # Rebuild the DB connection in case the DB went away
+        cursor = GetCursor()
+        SendKeepAlive()
+        SendDebug('Querying for updates after %d, server time %s'
+                  %(last_time, datetime.datetime.now()))
+
+        for username in showusers:
+            ts = datetime.datetime.now()
+            ts -= datetime.timedelta(days=5)
+            cursor.execute('select * from %ssummary where username="%s" '
+                           'and epoch > %d and day > date(%s);'
+                           %(eventname, username, last_time,
+                             sql.FormatSqlValue('timestamp', ts)))
+
+            for row in cursor:
+                SendPacket(
+                    {'type': 'update-value',
+                     'user': username,
+                     'written-at': row['epoch'],
+                     'day': row['day'].isoformat(),
+                     'payload': json.loads(row['data']).get(project, 0)})
+
+                if row['epoch'] > last_time:
+                    last_time = row['epoch']
