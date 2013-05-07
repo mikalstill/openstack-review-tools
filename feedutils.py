@@ -53,6 +53,10 @@ def GetGroupMembers(cursor, groupname):
 def ResolveGroupMembers(cursor, usersliststring, table, window_size):
     showusers = []
 
+    one_day = datetime.timedelta(days=1)
+    start_of_window = datetime.datetime.now()
+    start_of_window -= one_day * window_size
+
     for userish in usersliststring.lstrip(' ').split(' '):
         if userish.startswith('g:'):
             group_name = userish.split(':')[1]
