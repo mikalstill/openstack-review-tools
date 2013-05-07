@@ -240,7 +240,7 @@ def ScrapeProject(projectname, days):
                     for row in cursor:
                         user = row['post']
                         if WRITE:
-                            UpdateTrackingTables('progress', projectname,
+                            UpdateTrackingTables('progress', b, projectname,
                                                  timestamp, user)
                             subcursor.execute('commit;')
 
@@ -267,7 +267,7 @@ def ScrapeProject(projectname, days):
                             subcursor.execute('commit;')
                             print '  *** %s closed this bug ***' % user
 
-                            UpdateTrackingTables('close', projectname,
+                            UpdateTrackingTables('close', b, projectname,
                                                  timestamp, user)
                             subcursor.execute('commit;')
 
@@ -288,7 +288,7 @@ def ScrapeProject(projectname, days):
             timestamp = sql.FormatSqlValue('timestamp', triage_timestamp)
 
             if WRITE:
-                UpdateTrackingTables('triage', projectname, timestamp, user)
+                UpdateTrackingTables('triage', b, projectname, timestamp, user)
                 cursor.execute('commit;')
 
 
