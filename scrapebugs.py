@@ -291,7 +291,8 @@ def ScrapeProject(projectname, days):
             timestamp = sql.FormatSqlValue('timestamp', triage_timestamp)
 
             if WRITE:
-                UpdateTrackingTables('triage', b, projectname, timestamp, user)
+                UpdateTrackingTables('triage', b, projectname, timestamp,
+                                     status_toucher)
                 cursor.execute('commit;')
 
 
