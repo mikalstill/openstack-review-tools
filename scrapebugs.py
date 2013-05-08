@@ -292,7 +292,7 @@ def ScrapeProjectWrapped(projectname, days):
                     '/essex', '/folsom', '/grizzly', '/havana']:
         try:
             ScrapeProject(projectname + release, days)
-        except Exception, e:
+        except KeyError, e:
             print '*******************'
             print '%s%s errored with: %s' %(projectname, release, e)
             print '*******************'
