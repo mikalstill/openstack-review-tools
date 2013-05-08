@@ -41,14 +41,14 @@ def UpdateTrackingTables(eventname, b, projectname, timestamp, user):
         summary[triage['component']] += 1
         summary['__total__'] += 1
 
-        subcursor.execute('delete from bug%ssummary%s where '
-                          'username="%s" and day=date(%s);'
-                          %(eventname, VERSION, user, timestamp))
-        subcursor.execute('insert into bug%ssummary%s'
-                          '(day, username, data, epoch) '
-                          'values (date(%s), "%s", \'%s\', %d);'
-                          %(eventname, VERSION, timestamp, user,
-                            json.dumps(summary), int(time.time())))
+    subcursor.execute('delete from bug%ssummary%s where '
+                      'username="%s" and day=date(%s);'
+                      %(eventname, VERSION, user, timestamp))
+    subcursor.execute('insert into bug%ssummary%s'
+                      '(day, username, data, epoch) '
+                      'values (date(%s), "%s", \'%s\', %d);'
+                      %(eventname, VERSION, timestamp, user,
+                        json.dumps(summary), int(time.time())))
     subcursor.execute('commit;')
 
 
@@ -284,7 +284,6 @@ def ScrapeProject(projectname, days):
             if WRITE:
                 UpdateTrackingTables('triage', b, projectname, timestamp,
                                      status_toucher)
-                cursor.execute('commit;')
 
 
 def ScrapeProjectWrapped(projectname, days):
