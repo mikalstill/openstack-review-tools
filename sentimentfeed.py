@@ -19,19 +19,20 @@ if __name__ == '__main__':
     sys.stdout.flush()
 
     cursor = feedutils.GetCursor()
+    initial_size = 30
 
     showusers = ['mikalstill']
     form = cgi.FieldStorage()
     if form.has_key('reviewers'):
-      showusers = feedutils.ResolveGroupMembers(cursor, form['reviewers'].value)
+      showusers = feedutils.ResolveGroupMembers(cursor, form['reviewers'].value,
+                                                'reviewsummary', initial_size)
 
     # Fetch the last seven days of results to start off with
-    initial_size = 30
     one_day = datetime.timedelta(days=1)
     last_timestamp = datetime.datetime(1970, 1, 1)
 
     feedutils.SendGroups(cursor)
-    feedutils.SendReviewers(cursor, '__total__', initial_size)
+    feedutils.SendUsers(cursor, initial_size, 'reviewsummary')
     feedutils.SendPacket({'type': 'users-present',
                           'payload': showusers})
 

@@ -11,6 +11,7 @@ import time
 
 import feedutils
 import sql
+import utility
 
 from launchpadlib.launchpad import Launchpad
 
@@ -19,7 +20,7 @@ PERSON_RE = re.compile('.* \((.*)\)')
 WRITE = True
 VERSION = ''
 ONLY = []
-FORCEDAYS = None
+FORCEDAYS = 30
 
 
 def UpdateTrackingTables(eventname, b, projectname, timestamp, user):
@@ -33,13 +34,14 @@ def UpdateTrackingTables(eventname, b, projectname, timestamp, user):
 
     summary = {'__total__': 0}
     subcursor.execute('select * from bug%s%s where '
-                      'username = "%s" and date(timestamp) = %s '
+                      'username = "%s" and date(timestamp) = date(%s) '
                       'order by timestamp asc;'
                       %(eventname, VERSION, user, timestamp))
     for triage in subcursor:
         summary.setdefault(triage['component'], 0)
         summary[triage['component']] += 1
         summary['__total__'] += 1
+    print '  %s' % repr(summary)
 
     subcursor.execute('delete from bug%ssummary%s where '
                       'username="%s" and day=date(%s);'
@@ -81,8 +83,8 @@ def ScrapeProject(projectname, days):
         importance_toucher = None
         triage_timestamp = None
 
-        print '\n%s' % b.title
-        print 'Reported by: %s' % b.bug.owner.name
+        print '\n%s' % utility.Normalize(b.title)
+        print 'Reported by: %s' % utility.Normalize(b.bug.owner.name)
         if WRITE:
             cursor.execute('insert ignore into bugs%s '
                            '(id, title, reporter, timestamp, component) '
@@ -93,6 +95,12 @@ def ScrapeProject(projectname, days):
                              sql.FormatSqlValue('timestamp',
                                                 b.bug.date_created),
                              projectname))
+            cursor.execute('commit;')
+
+            # Not in the initial write because it might be an update
+            print 'Tags: %s' % b.bug.tags
+            cursor.execute('update bugs%s set tags="%s" where id=%s;'
+                           %(VERSION, ' '.join(b.bug.tags), b.bug.id))
             cursor.execute('commit;')
 
             for dup in getattr(b.bug, 'duplicates', []):
@@ -155,7 +163,8 @@ def ScrapeProject(projectname, days):
                         cursor.execute('commit;')
 
         for activity in b.bug.activity:
-            if activity.whatchanged.startswith('%s: ' % projectname):
+            if (activity.whatchanged.startswith('%s: ' % projectname) or
+                activity.whatchanged == 'tags'):
                 timestamp = sql.FormatSqlValue('timestamp',
                                                activity.datechanged)
                 oldvalue = activity.oldvalue
@@ -175,6 +184,11 @@ def ScrapeProject(projectname, days):
                 except:
                     pass
 
+                if activity.whatchanged == 'tags':
+                    field = 'tags'
+                else:
+                    field = activity.whatchanged.split(': ')[1]
+
                 print('  %s :: %s -> %s :: %s on %s'
                       % (activity.whatchanged,
                          oldvalue,
@@ -190,8 +204,7 @@ def ScrapeProject(projectname, days):
                                    '"%s");'
                                    %(VERSION, b.bug.id, projectname,
                                      timestamp, activity.person.name,
-                                     activity.whatchanged.split(': ')[1],
-                                     oldvalue, newvalue))
+                                     field, oldvalue, newvalue))
                     cursor.execute('commit;')
 
                 # We define a triage as changing the status from New, and
@@ -309,12 +322,4 @@ else:
         days = 1000
 print 'Fetching %d days of bugs' % days
 
-ScrapeProjectWrapped('nova', days)
-ScrapeProjectWrapped('openstack-common', days)
-ScrapeProjectWrapped('oslo', days)
-ScrapeProjectWrapped('glance', days)
-ScrapeProjectWrapped('horizon', days)
-ScrapeProjectWrapped('keystone', days)
-ScrapeProjectWrapped('swift', days)
-ScrapeProjectWrapped('cinder', days)
-
+ScrapeProjectWrapped(sys.argv[1], days)
