@@ -37,8 +37,8 @@ def Reviews(component):
           checksum = hashlib.sha1(l).hexdigest()
           last_updated = datetime.datetime.fromtimestamp(d['lastUpdated'])
           timestamp = sql.FormatSqlValue('timestamp', last_updated)
-          insert = ('insert ignore into changes (changeid, timestamp, parsed, '
-                    'checksum) values ("%s", %s, "%s", "%s");'
+          insert = ('insert ignore into changes (changeid, timestamp, '
+                    'parsed, checksum) values ("%s", %s, "%s", "%s");'
                     %(d['id'], timestamp, b64, checksum))
           cursor.execute(insert)
           if cursor.rowcount == 0:
@@ -57,7 +57,8 @@ def Reviews(component):
           for review in ps.get('approvals', []):
               # Deliberately leave the timezone alone here so its consistant
               # with reports others generate.
-              updated_at = datetime.datetime.fromtimestamp(review['grantedOn'])
+              updated_at = datetime.datetime.fromtimestamp(
+                  review['grantedOn'])
               username = review['by'].get('username', 'unknown')
 
               if username in ['jenkins', 'smokestack']:
@@ -66,9 +67,10 @@ def Reviews(component):
               timestamp = sql.FormatSqlValue('timestamp', updated_at)
               score = review.get('value', 0)
               cursor.execute('insert ignore into reviews '
-                             '(changeid, username, timestamp, day, component, '
-                             'patchset, score) '
-                             'values ("%s", "%s", %s, date(%s), "%s", %s, %s);'
+                             '(changeid, username, timestamp, day, '
+                             'component, patchset, score) '
+                             'values ("%s", "%s", %s, date(%s), "%s", %s, '
+                             '%s);'
                              %(d['id'], username, timestamp, timestamp,
                                component, patchset, score))
               if cursor.rowcount > 0:
@@ -82,7 +84,8 @@ def Reviews(component):
                       try:
                           summary = json.loads(row['data'])
                       except Exception, e:
-                          print 'Could not decode summary "%s": %s' %(row['data'], e)
+                          print ('Could not decode summary "%s": %s'
+                                 %(row['data'], e))
                           summary = {}
                   else:
                       summary = {}
